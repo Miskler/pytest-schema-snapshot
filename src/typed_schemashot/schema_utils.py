@@ -1,6 +1,9 @@
 from typing import Any, Dict, List, Union, TypeVar, Optional
 import json
 from dataclasses import dataclass
+from urllib.parse import urlparse
+import re
+from datetime import datetime
 from . import cfg as CONFIG 
 
 
@@ -12,6 +15,7 @@ class RawSchema:
     properties: Optional[Dict[str, 'RawSchema']] = None
     items: Optional[List['RawSchema']] = None
     required: Optional[List[str]] = None
+    format: Optional[str] = None
 
 def _get_type_name(value: Any) -> str:
     """Получает имя типа для значения."""
@@ -20,7 +24,35 @@ def _get_type_name(value: Any) -> str:
             return name
     raise ValueError(f'Неподдерживаемый тип: {type(value)}')
 
-def merge_schemas(a: RawSchema, b: RawSchema) -> RawSchema:
+def _detect_format(value: str) -> Optional[str]:
+    """Определяет формат строки: дата-время, email, uri или None."""
+    # Попытка распознать ISO формат даты-времени
+    try:
+        datetime.fromisoformat(value)
+        return 'date-time'
+    except Exception:
+        pass
+    
+    # Попытка распознать ISO формат даты
+    try:
+        datetime.strptime(value, '%Y-%m-%d').date()
+        return 'date'
+    except Exception:
+        pass
+
+    # Email-адрес
+    email_pattern = r'^[^@\s]+@[^@\s]+\.[^@\s]+$'
+    if re.match(email_pattern, value):
+        return 'email'
+
+    # URI (http/https)
+    parsed = urlparse(value)
+    if parsed.scheme in ('http', 'https') and parsed.netloc:
+        return 'uri'
+
+    return None
+
+def _merge_schemas(a: RawSchema, b: RawSchema) -> RawSchema:
     """
     Рекурсивно объединяет две RawSchema: 
     - Склеивает type_names,
@@ -45,7 +77,7 @@ def merge_schemas(a: RawSchema, b: RawSchema) -> RawSchema:
             pb = props_b.get(key)
             if pa and pb:
                 # Рекурсивно объединяем дочерние схемы
-                merged_prop = merge_schemas(pa, pb)
+                merged_prop = _merge_schemas(pa, pb)
                 merged_required.append(key)
             else:
                 # Если свойство есть только в одной схеме → необязательное
@@ -63,7 +95,7 @@ def merge_schemas(a: RawSchema, b: RawSchema) -> RawSchema:
             if combined is None:
                 combined = schema
             else:
-                combined = merge_schemas(combined, schema)
+                combined = _merge_schemas(combined, schema)
         merged.items = [combined] if combined else []
 
     return merged
@@ -71,7 +103,6 @@ def merge_schemas(a: RawSchema, b: RawSchema) -> RawSchema:
 
 def gen_schema(data: Any) -> RawSchema:
     """Генерирует RawSchema из данных."""
-    from datetime import datetime
 
     type_name = _get_type_name(data)
     if type_name == 'object':
@@ -92,7 +123,7 @@ def gen_schema(data: Any) -> RawSchema:
         # Склеиваем все схемы элементов
         merged = item_schemas[0]
         for schema in item_schemas[1:]:
-            merged = merge_schemas(merged, schema)
+            merged = _merge_schemas(merged, schema)
 
         return RawSchema(
             type_names=[type_name],
@@ -100,7 +131,16 @@ def gen_schema(data: Any) -> RawSchema:
         )
 
     else:
-        return RawSchema(type_names=[type_name])
+        raw = RawSchema(type_names=[type_name])
+
+        # Автоопределение формата для строк 
+        if 'string' in type_name and isinstance(data, str):
+            fmt = _detect_format(data)
+            if fmt:
+                print(f'Определён формат: {fmt}', flush=True)
+                setattr(raw, 'format', fmt)
+
+        return raw
 
 
 def to_json_schema(raw: RawSchema) -> Dict[str, Any]:
@@ -108,6 +148,8 @@ def to_json_schema(raw: RawSchema) -> Dict[str, Any]:
     schema: Dict[str, Any] = {
         'type': raw.type_names[0] if len(raw.type_names) == 1 else raw.type_names
     }
+    if raw.format:
+        schema['format'] = raw.format
     
     if raw.properties:
         schema['properties'] = {

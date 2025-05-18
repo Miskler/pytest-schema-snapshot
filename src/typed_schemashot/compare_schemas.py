@@ -63,7 +63,7 @@ class SchemaComparator:
             if p in ("properties", "items"):
                 continue
             # одинаковое условие для type и required
-            if p in ("type", "required") and (i == 0 or path[i-1] != "properties"):
+            if p in ("type", "required", "format") and (i == 0 or path[i-1] != "properties"):
                 segments.append(f".{p}")
             else:
                 segments.append(f"[{json.dumps(p, ensure_ascii=False)}]")
