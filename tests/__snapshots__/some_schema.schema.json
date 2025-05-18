@@ -5,13 +5,16 @@
       "type": "string"
     },
     "необязательная": {
-      "type": "integer"
+      "type": "null"
     },
     "словарь": {
       "type": "object",
       "properties": {
         "ключ": {
           "type": "string"
+        },
+        "число": {
+          "type": "integer"
         },
         "булево": {
           "type": "boolean"
@@ -63,14 +66,51 @@
     "сложная_структура": {
       "type": "array",
       "items": {
-        "type": "object"
+        "type": "object",
+        "properties": {
+          "имя": {
+            "type": "string"
+          },
+          "id": {
+            "type": "integer"
+          },
+          "вложенный_объект": {
+            "type": "object",
+            "properties": {
+              "лишний_ключ": {
+                "type": "null"
+              },
+              "ключ": {
+                "type": "integer"
+              }
+            },
+            "additionalProperties": false,
+            "required": [
+              "ключ"
+            ]
+          },
+          "возраст": {
+            "type": [
+              "integer",
+              "string"
+            ]
+          },
+          "дата": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "возраст",
+          "имя"
+        ]
       }
     }
   },
   "additionalProperties": false,
   "required": [
     "обязательная",
-    "необязательная",
     "словарь",
     "сложная_структура"
   ]

@@ -21,7 +21,7 @@ def schemashot(request: pytest.FixtureRequest) -> Generator[SchemaShot, None, No
             data = {"key": "value"}
             schemashot.assert_match(data, "test_name")
     """
-    root_dir = Path(request.config.rootdir)
+    root_dir = Path(request.fspath).parent
     update_mode = bool(request.config.getoption("--schema-update"))
     
     shot = SchemaShot(root_dir, update_mode)
