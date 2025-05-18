@@ -1,0 +1,77 @@
+{
+  "type": "object",
+  "properties": {
+    "обязательная": {
+      "type": "string"
+    },
+    "необязательная": {
+      "type": "integer"
+    },
+    "словарь": {
+      "type": "object",
+      "properties": {
+        "ключ": {
+          "type": "string"
+        },
+        "булево": {
+          "type": "boolean"
+        },
+        "список": {
+          "type": "array",
+          "items": {
+            "type": "integer"
+          }
+        },
+        "вложенный_словарь": {
+          "type": "object",
+          "properties": {
+            "пустое": {
+              "type": "null"
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "пустое"
+          ]
+        },
+        "пустой_словарь": {
+          "type": "object"
+        },
+        "пустой_список": {
+          "type": "array"
+        },
+        "пустое_значение": {
+          "type": "string"
+        },
+        "пустое_число": {
+          "type": "integer"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "ключ",
+        "число",
+        "булево",
+        "список",
+        "вложенный_словарь",
+        "пустой_словарь",
+        "пустой_список",
+        "пустое_значение",
+        "пустое_число"
+      ]
+    },
+    "сложная_структура": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    }
+  },
+  "additionalProperties": false,
+  "required": [
+    "обязательная",
+    "необязательная",
+    "словарь",
+    "сложная_структура"
+  ]
+}

@@ -1,6 +1,8 @@
 from typing import Any, Dict, List, Union, TypeVar, Optional
 import json
 from dataclasses import dataclass
+from . import cfg as CONFIG 
+
 
 T = TypeVar('T')
 
@@ -13,22 +15,10 @@ class RawSchema:
 
 def _get_type_name(value: Any) -> str:
     """Получает имя типа для значения."""
-    if value is None:
-        return 'null'
-    elif isinstance(value, bool):
-        return 'boolean'
-    elif isinstance(value, int):
-        return 'integer'
-    elif isinstance(value, float):
-        return 'number'
-    elif isinstance(value, str):
-        return 'string'
-    elif isinstance(value, (list, tuple)):
-        return 'array'
-    elif isinstance(value, dict):
-        return 'object'
-    else:
-        raise ValueError(f'Неподдерживаемый тип: {type(value)}')
+    for t, name in CONFIG.type_map.items():
+        if isinstance(value, t):
+            return name
+    raise ValueError(f'Неподдерживаемый тип: {type(value)}')
 
 def gen_schema(data: Any) -> RawSchema:
     """Генерирует RawSchema из данных."""
