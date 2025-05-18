@@ -3,7 +3,7 @@ import os
 from pathlib import Path
 from typing import Any, Dict, Set
 import pytest
-from jsonschema import validate, ValidationError
+from jsonschema import validate, ValidationError, FormatChecker
 from .schema_utils import gen_schema, to_json_schema
 from .compare_schemas import SchemaComparator
 
@@ -74,7 +74,7 @@ class SchemaShot:
         else:
             try:
                 # Проверяем данные по существующей схеме
-                validate(instance=data, schema=existing_schema)
+                validate(instance=data, schema=existing_schema, format_checker=FormatChecker())
             except ValidationError as e:
                 pytest.fail(f"\n\n{differences}\n\nValidation error in '{name}': {e.message}")
 

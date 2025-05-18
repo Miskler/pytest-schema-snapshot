@@ -26,12 +26,20 @@ def _get_type_name(value: Any) -> str:
 
 def _detect_format(value: str) -> Optional[str]:
     """Определяет формат строки: дата-время, email, uri или None."""
-    # Попытка распознать ISO формат даты-времени
+    # Проверка на date-time (RFC 3339)
     try:
-        datetime.fromisoformat(value)
+        # Попытка разбора через fromisoformat не включает проверку временной зоны,
+        # поэтому используем строгий парсинг вручную.
+        datetime.strptime(value, '%Y-%m-%dT%H:%M:%S%z')  # пример: 2023-01-01T12:00:00+03:00
         return 'date-time'
-    except Exception:
-        pass
+    except ValueError:
+        try:
+            # Иногда бывает с Z вместо смещения — это тоже допустимо по RFC 3339
+            if value.endswith('Z'):
+                datetime.strptime(value, '%Y-%m-%dT%H:%M:%SZ')
+                return 'date-time'
+        except ValueError:
+            pass
     
     # Попытка распознать ISO формат даты
     try:
@@ -137,7 +145,6 @@ def gen_schema(data: Any) -> RawSchema:
         if 'string' in type_name and isinstance(data, str):
             fmt = _detect_format(data)
             if fmt:
-                print(f'Определён формат: {fmt}', flush=True)
                 setattr(raw, 'format', fmt)
 
         return raw

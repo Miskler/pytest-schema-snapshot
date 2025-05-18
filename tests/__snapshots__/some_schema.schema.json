@@ -68,6 +68,10 @@
       "items": {
         "type": "object",
         "properties": {
+          "почта": {
+            "type": "string",
+            "format": "email"
+          },
           "вложенный_объект": {
             "type": "object",
             "properties": {
@@ -83,19 +87,14 @@
               "ключ"
             ]
           },
-          "почта": {
-            "type": "string",
-            "format": "email"
-          },
-          "имя": {
+          "дата": {
             "type": "string"
           },
           "id": {
             "type": "integer"
           },
-          "дата": {
-            "type": "string",
-            "format": "date-time"
+          "имя": {
+            "type": "string"
           },
           "возраст": {
             "type": [
