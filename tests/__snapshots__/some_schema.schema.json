@@ -72,14 +72,20 @@
             "type": "string",
             "format": "email"
           },
+          "возраст": {
+            "type": [
+              "integer",
+              "number"
+            ]
+          },
           "вложенный_объект": {
             "type": "object",
             "properties": {
-              "ключ": {
-                "type": "string"
-              },
               "лишний_ключ": {
                 "type": "null"
+              },
+              "ключ": {
+                "type": "string"
               }
             },
             "additionalProperties": false,
@@ -87,20 +93,15 @@
               "ключ"
             ]
           },
-          "дата": {
-            "type": "string"
-          },
           "id": {
             "type": "integer"
           },
+          "дата": {
+            "type": "string",
+            "format": "date-time"
+          },
           "имя": {
             "type": "string"
-          },
-          "возраст": {
-            "type": [
-              "integer",
-              "number"
-            ]
           }
         },
         "additionalProperties": false,
@@ -111,6 +112,21 @@
           "имя"
         ]
       }
+    },
+    "разнотипный_массив": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "ключ": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "ключ"
+        ]
+      }
     }
   },
   "additionalProperties": false,
@@ -118,6 +134,7 @@
     "обязательная",
     "необязательная",
     "словарь",
-    "сложная_структура"
+    "сложная_структура",
+    "разнотипный_массив"
   ]
 }

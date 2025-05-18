@@ -1,7 +1,7 @@
 from typing import Any, Dict, List, Union, TypeVar, Optional
-import json
 from dataclasses import dataclass
 from urllib.parse import urlparse
+import ipaddress
 import re
 from datetime import datetime
 from . import cfg as CONFIG 
@@ -57,6 +57,14 @@ def _detect_format(value: str) -> Optional[str]:
     parsed = urlparse(value)
     if parsed.scheme in ('http', 'https') and parsed.netloc:
         return 'uri'
+
+    # Проверка IPv4
+    try:
+        ip = ipaddress.ip_address(value)
+        if isinstance(ip, ipaddress.IPv4Address):
+            return 'ipv4'
+    except ValueError:
+        pass
 
     return None
 
