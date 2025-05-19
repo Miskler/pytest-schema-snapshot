@@ -4,6 +4,7 @@
 from typing import Any, Dict, List, Tuple, Optional
 import json
 import click
+from . import cfg as CONGIG
 
 
 class SchemaComparator:
@@ -20,6 +21,10 @@ class SchemaComparator:
             {"properties": self.new_schema.get("properties", {})}
         )
         return self._format_differences(differences)
+
+    def _format_output(self, text: str, mode: str = "no_diff") -> str:
+        """Форматирует вывод с помощью Click."""
+        return click.style(f'{CONGIG.modes[mode]["symbol"]} {text}', fg=CONGIG.modes[mode]["color"], bold=True)
 
     def _find_differences(
         self, old: Any, new: Any, path: Optional[List[str]] = None
@@ -63,39 +68,56 @@ class SchemaComparator:
             if p in ("properties", "items"):
                 continue
             # одинаковое условие для type и required
-            if p in ("type", "required", "format") and (i == 0 or path[i-1] != "properties"):
+            if p in ("type", "required", "format", "additionalProperties", "anyOf") and (i == 0 or path[i-1] != "properties"):
                 segments.append(f".{p}")
             else:
                 segments.append(f"[{json.dumps(p, ensure_ascii=False)}]")
         return ''.join(segments)
 
-    @staticmethod
-    def _format_list_diff(path: str, old_list: List[Any], new_list: List[Any]) -> List[str]:
+    def _format_list_diff(self, path: str, old_list: List[Any] | None, new_list: List[Any] | None) -> List[str]:
         """Форматирует diff для списков: полный список с пометками +/-."""
-        result: List[str] = [click.style(f"  {path}:", fg="reset")]
-        old_set = set(old_list)
-        new_set = set(new_list)
-        # Сохраняем порядок: индексы из нового, затем из старого
-        def sort_key(item):
-            try:
-                return (0, new_list.index(item))
-            except ValueError:
-                return (1, old_list.index(item))
-        all_items = sorted(old_set | new_set, key=sort_key)
+        target_mode = "no_diff"
 
-        for item in all_items:
+        if old_list is None:
+            target_mode = "append"
+            old_list = []
+        elif new_list is None:
+            target_mode = "remove"
+            new_list = []
+
+        result: List[str] = [self._format_output(f"{path}:", target_mode)]
+
+
+        # Собираем все уникальные элементы без хеширования:
+        unique_items: List[Any] = []
+        for item in new_list + old_list:
+            if not any(item == existing for existing in unique_items):
+                unique_items.append(item)
+
+        have_changes = False
+        for item in unique_items:
             item_str = json.dumps(item, ensure_ascii=False)
-            if item in old_set and item not in new_set:
-                result.append(click.style(f"-    {item_str},", fg="red"))
-            elif item not in old_set and item in new_set:
-                result.append(click.style(f"+    {item_str},", fg="green"))
-            else:
-                result.append(click.style(f"     {item_str},", fg="reset"))
+            in_old = any(item == old for old in old_list)
+            in_new = any(item == new for new in new_list)
 
+            if in_old and not in_new:
+                result.append(self._format_output(f"  {item_str},", "remove"))
+                have_changes = True
+            elif not in_old and in_new:
+                result.append(self._format_output(f"  {item_str},", "append"))
+                have_changes = True
+            else:
+                result.append(self._format_output(f"  {item_str},", "no_diff"))
+
+        if not have_changes:
+            return []
+
+        # Убираем лишнюю запятую у последнего элемента:
         head, sep, tail = result[-1].rpartition(',')
-        result[-1] = head + tail  # Удаляем запятую в конце последнего элемента
+        result[-1] = head + tail
 
         return result
+
 
     def _format_differences(
         self, differences: List[Tuple[List[str], Any, Any]]
@@ -110,27 +132,28 @@ class SchemaComparator:
             # Добавление
             elif old_val is None:
                 if isinstance(new_val, list):
-                    output.extend(self._format_list_diff(p, [], new_val))
+                    output.extend(self._format_list_diff(p, None, new_val))
                 else:
-                    output.append(click.style(f"+ {p}: {json.dumps(new_val, ensure_ascii=False)}", fg="green"))
+                    output.append(self._format_output(f"{p}: {json.dumps(new_val, ensure_ascii=False)}", "append"))
             # Удаление
             elif new_val is None:
                 if isinstance(old_val, list):
-                    output.extend(self._format_list_diff(p, old_val, []))
+                    output.extend(self._format_list_diff(p, old_val, None))
                 else:
-                    output.append(click.style(f"- {p}: {json.dumps(old_val, ensure_ascii=False)}", fg="red"))
+                    output.append(self._format_output(f"{p}: {json.dumps(old_val, ensure_ascii=False)}", "remove"))
             # Замена простого значения
             elif not isinstance(old_val, (dict, list)) and not isinstance(new_val, (dict, list)):
-                output.append(click.style(f"r {p}: {json.dumps(old_val)} -> {json.dumps(new_val)}", fg="cyan"))
+                output.append(self._format_output(f"{p}: {json.dumps(old_val)} -> {json.dumps(new_val)}", "replace"))
             # Сложные структуры
             else:
                 old_json = json.dumps(old_val, indent=2, ensure_ascii=False)
                 new_json = json.dumps(new_val, indent=2, ensure_ascii=False)
-                output.append(f"- {p}:")
+                output.append(self._format_output(f"{p}:", "replace"))
                 for line in old_json.splitlines():
-                    output.append(click.style(f"  {line}", fg="red"))
-                output.append(f"+ {p}:")
+                    output.append(self._format_output(f"  {line}", "remove"))
+                
                 for line in new_json.splitlines():
-                    output.append(click.style(f"  {line}", fg="green"))
-            output.append("")
+                    output.append(self._format_output(f"  {line}", "append"))
+
+            if len(output) == 0 or len(output[-1]) != 0: output.append("")
         return "\n".join(output).rstrip()

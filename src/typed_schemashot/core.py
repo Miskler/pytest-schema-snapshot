@@ -1,11 +1,11 @@
 import json
-import os
 from pathlib import Path
 from typing import Any, Dict, Set
 import pytest
 from jsonschema import validate, ValidationError, FormatChecker
-from .schema_utils import gen_schema, to_json_schema
 from .compare_schemas import SchemaComparator
+from genson import SchemaBuilder
+
 
 class SchemaShot:
     def __init__(self, root_dir: Path, update_mode: bool = False):
@@ -53,7 +53,9 @@ class SchemaShot:
         self.used_schemas.add(schema_path.name)
         
         # Генерируем текущую схему
-        current_schema = to_json_schema(gen_schema(data))
+        builder = SchemaBuilder()
+        builder.add_object(data)
+        current_schema = builder.to_schema()
         
         if not schema_path.exists():
             if not self.update_mode:

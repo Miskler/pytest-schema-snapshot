@@ -7,7 +7,6 @@ pytest-typed-schema-shot
 """
 
 from .core import SchemaShot
-from .schema_utils import gen_schema, to_json_schema
 
 __version__ = "0.1.0"
-__all__ = ["SchemaShot", "gen_schema", "to_json_schema"]
+__all__ = ["SchemaShot"]

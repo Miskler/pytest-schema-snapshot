@@ -31,7 +31,7 @@ async def test_something(schemashot):
             },
             {
                 "id": 2,
-                "имя": "Мария",
+                "имя": ["Мария", "Анна"],
                 "возраст": 30.5,
                 "вложенный_объект": {
                     "ключ": "значение",
@@ -39,7 +39,6 @@ async def test_something(schemashot):
                 }
             }
         ],
-        "разнотипный_массив": [None, "строка", {"ключ": "значение"}], # TODO: FIX: если object внутри разнотипного массива, то required внутри не проставляется
-        # TODO: FIX: r не работает с str -> array
+        "разнотипный_массив": [None, "строка", {"ключ": "значение"}]
     }
     schemashot.assert_match(data, "some_schema")

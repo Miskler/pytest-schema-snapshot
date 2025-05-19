@@ -9,3 +9,22 @@ type_map = {
     tuple: 'array',
     dict: 'object'
 }
+
+modes = {
+    'append': {
+        "color": "green",
+        "symbol": "+",
+    },
+    'remove': {
+        "color": "red",
+        "symbol": "-",
+    },
+    'replace': {
+        "color": "cyan",
+        "symbol": "r",
+    },
+    'no_diff': {
+        "color": "reset",
+        "symbol": " ",
+    }
+}

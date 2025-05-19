@@ -1,4 +1,5 @@
 {
+  "$schema": "http://json-schema.org/schema#",
   "type": "object",
   "properties": {
     "обязательная": {
@@ -32,7 +33,6 @@
               "type": "null"
             }
           },
-          "additionalProperties": false,
           "required": [
             "пустое"
           ]
@@ -50,17 +50,17 @@
           "type": "integer"
         }
       },
-      "additionalProperties": false,
       "required": [
-        "ключ",
-        "число",
         "булево",
-        "список",
         "вложенный_словарь",
-        "пустой_словарь",
-        "пустой_список",
+        "ключ",
         "пустое_значение",
-        "пустое_число"
+        "пустое_число",
+        "пустой_словарь",
+        "пустой_словарьd",
+        "пустой_список",
+        "список",
+        "число"
       ]
     },
     "сложная_структура": {
@@ -68,43 +68,33 @@
       "items": {
         "type": "object",
         "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "имя": {
+            "type": "string"
+          },
           "почта": {
-            "type": "string",
-            "format": "email"
+            "type": "string"
           },
           "возраст": {
-            "type": [
-              "integer",
-              "number"
-            ]
+            "type": "string"
+          },
+          "дата": {
+            "type": "string"
           },
           "вложенный_объект": {
             "type": "object",
             "properties": {
               "лишний_ключ": {
                 "type": "null"
-              },
-              "ключ": {
-                "type": "string"
               }
             },
-            "additionalProperties": false,
             "required": [
               "ключ"
             ]
-          },
-          "id": {
-            "type": "integer"
-          },
-          "дата": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "имя": {
-            "type": "string"
           }
         },
-        "additionalProperties": false,
         "required": [
           "id",
           "вложенный_объект",
@@ -116,25 +106,33 @@
     "разнотипный_массив": {
       "type": "array",
       "items": {
-        "type": "object",
-        "properties": {
-          "ключ": {
-            "type": "string"
+        "anyOf": [
+          {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "ключ": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "ключ"
+            ]
           }
-        },
-        "additionalProperties": false,
-        "required": [
-          "ключ"
         ]
       }
     }
   },
-  "additionalProperties": false,
   "required": [
-    "обязательная",
     "необязательная",
+    "обязательная",
+    "разнотипный_массив",
     "словарь",
-    "сложная_структура",
-    "разнотипный_массив"
+    "сложная_структура"
   ]
 }
