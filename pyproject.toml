@@ -7,30 +7,15 @@ name = "pytest-typed-schema-shot"
 version = "0.1.0"
 description = "Pytest plugin for automatic JSON Schema generation and validation from examples"
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.10"
 license = "MIT"
 keywords = ["pytest", "plugin", "json-schema", "testing"]
-authors = [
-    { name = "Your Name", email = "your.email@example.com" },
-]
-dependencies = [
-    "pytest>=7.0.0",
-    "jsonschema>=4.0.0",
-]
-
-[project.optional-dependencies]
-dev = [
-    "pytest>=7.0.0",
-    "pytest-asyncio>=0.21.0",
-    "pytest-cov>=4.0.0",
-    "pytest-xdist>=3.3.0",
-]
 
 [project.entry-points.pytest11]
-schemashot = "typed_schemashot.plugin"
+schemashot = "typed_schema_shot.plugin"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/typed_schemashot"]
+packages = ["src/typed_schema_shot"]
 
 [tool.pytest.ini_options]
 addopts = "-ra -q"

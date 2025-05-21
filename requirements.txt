@@ -1,0 +1,5 @@
+click
+genson
+jsonschema
+pytest
+setuptools

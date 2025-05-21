@@ -59,10 +59,10 @@ class SchemaShot:
         
         if not schema_path.exists():
             if not self.update_mode:
-                raise pytest.fail.Exception(f"Схема '{name}' не найдена. Запустите тест с опцией --schema-update для её создания.")
+                raise pytest.fail.Exception(f"Schema '{name}' not found. Run the test with the --schema-update option to create it.")
             
             self._save_schema(current_schema, schema_path)
-            pytest.skip(f"Создана новая схема '{name}'")
+            pytest.skip(f"New schema '{name}' has been created.")
             return
             
         # Загружаем существующую схему
@@ -83,13 +83,13 @@ class SchemaShot:
 
     def cleanup_unused_schemas(self) -> None:
         """Удаляет неиспользованные схемы в режиме обновления."""
-        if not self.update_mode:
-            return
-            
         for schema_file in self.snapshot_dir.glob("*.schema.json"):
             if schema_file.name not in self.used_schemas:
-                schema_file.unlink()
-                print(f"Удалена неиспользуемая схема: {schema_file.name}")
+                if self.update_mode:
+                    schema_file.unlink()
+                    print(f"Unused schema deleted: {schema_file.name}")
+                else:
+                    pytest.skip(f"Unused schema found: {schema_file.name}. Use --schema-update to delete it.")
 
     def _compare_schemas(self, old_schema: Dict[str, Any], new_schema: Dict[str, Any]) -> str:
         """Сравнивает две схемы и возвращает описание различий."""
