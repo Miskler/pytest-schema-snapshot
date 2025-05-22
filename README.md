@@ -30,6 +30,30 @@
 * Support for `Union` types and optional fields.
 
   Поддержка `Union` типов и опциональных полей.
+* Built-in diff comparison of changes
+
+  Встроенный diff сравнения изменений:
+  ```diff
+  - ["complex_structure"]["mail"].format: "email"
+
+  r ["complex_structure"]["age"].type:
+  -   [
+  -     "integer",
+  -     "number"
+  -   ]
+  +   "number"
+  
+  - ["multitype_array"]: {"key": {"type": "string"}}
+  
+  - ["multitype_array"].type: "object"
+  
+  - ["multitype_array"].required:
+  -    "ключ"
+
+  + ["multitype_array"].anyOf:
+  +    {"type": ["null", "string"]},
+  +    {"type": "object", "properties": {"key": {"type": "string"}}, "required": ["key"]}
+  ```
 
 ## Installation
 

@@ -1,6 +1,12 @@
 from pathlib import Path
 import pytest
+import logging
+from typing import Generator
 from .core import SchemaShot
+
+# Глобальное хранилище используемых схем в рамках всей сессии
+_used_schemas: set[str] = set()
+
 
 def pytest_addoption(parser: pytest.Parser) -> None:
     """Добавляет опцию --schema-update в pytest."""
@@ -10,32 +16,41 @@ def pytest_addoption(parser: pytest.Parser) -> None:
         help="Обновить или создать JSON Schema файлы на основе текущих данных"
     )
 
-# Хранилище на уровне плагина
-_used_schemas: set[str] = set()
 
-@pytest.fixture
+@pytest.fixture(scope="function")
 def schemashot(request: pytest.FixtureRequest) -> Generator[SchemaShot, None, None]:
     """
-    Фикстура, предоставляющая экземпляр SchemaShot.
-    
-    Использование:
-        def test_something(schemashot):
-            data = {"key": "value"}
-            schemashot.assert_match(data, "test_name")
+    Фикстура, предоставляющая экземпляр SchemaShot и собирающая использованные схемы.
     """
     root_dir = Path(request.fspath).parent
     update_mode = bool(request.config.getoption("--schema-update"))
-    
+
     shot = SchemaShot(root_dir, update_mode)
     yield shot
-    # Собираем имена, но НЕ удаляем
+    # собираем имена всех схем, проверенных в этом тесте
     _used_schemas.update(shot.used_schemas)
 
-def pytest_sessionfinish(session, exitstatus):
-    from .core import SchemaShot
-    # Удаляем «лишние» схемы только здесь
-    update_mode = bool(session.config.getoption("--schema-update"))
-    snapshot_dir = Path(session.config.rootpath) / "__snapshots__"
+
+def pytest_unconfigure(config: pytest.Config) -> None:
+    """
+    Хук, который отрабатывает после завершения всех тестов.
+    Удаляет неиспользованные схемы, если запущено с --schema-update.
+    """
+    update_mode = bool(config.getoption("--schema-update"))
+    root_dir = Path(config.rootpath)
+    snapshot_dir = root_dir / '__snapshots__'
+    logger = logging.getLogger(__name__)
+
+    if not snapshot_dir.exists():
+        return
+
     for schema_file in snapshot_dir.glob("*.schema.json"):
-        if schema_file.name not in _used_schemas and update_mode:
-            schema_file.unlink()
+        if schema_file.name not in _used_schemas:
+            if update_mode:
+                schema_file.unlink()
+                logger.info(f"Unused schema deleted: `{schema_file.name}`")
+            else:
+                logger.warning(
+                    f"Unused schema found: `{schema_file.name}`. "
+                    "Use `--schema-update` to remove it."
+                )
