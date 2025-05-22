@@ -5,6 +5,7 @@ import pytest
 from jsonschema import validate, ValidationError, FormatChecker
 from .compare_schemas import SchemaComparator
 from genson import SchemaBuilder
+import logging
 
 
 class SchemaShot:
@@ -20,6 +21,14 @@ class SchemaShot:
         self.update_mode = update_mode
         self.snapshot_dir = root_dir / '__snapshots__'
         self.used_schemas: Set[str] = set()
+
+        self.logger = logging.getLogger(__name__)
+        # добавляем вывод в stderr
+        handler = logging.StreamHandler()
+        handler.setFormatter(logging.Formatter("%(levelname)s %(name)s: %(message)s"))
+        self.logger.addHandler(handler)
+        # и поднимаем уровень, чтобы INFO/DEBUG прошли через handler
+        self.logger.setLevel(logging.INFO)
 
         # Создаем директорию для снэпшотов, если её нет
         if not self.snapshot_dir.exists():
@@ -59,10 +68,10 @@ class SchemaShot:
         
         if not schema_path.exists():
             if not self.update_mode:
-                raise pytest.fail.Exception(f"Schema '{name}' not found. Run the test with the --schema-update option to create it.")
+                raise pytest.fail.Exception(f"Schema `{name}` not found. Run the test with the --schema-update option to create it.")
             
             self._save_schema(current_schema, schema_path)
-            pytest.skip(f"New schema '{name}' has been created.")
+            pytest.skip(f"New schema `{name}` has been created.")
             return
             
         # Загружаем существующую схему
@@ -72,13 +81,13 @@ class SchemaShot:
         # Проверяем, нужно ли обновить схему
         if existing_schema != current_schema and self.update_mode:
             self._save_schema(current_schema, schema_path)
-            pytest.skip(f"Schema '{name}' updated.\n\n{differences}")
+            pytest.skip(f"Schema `{name}` updated.\n\n{differences}")
         else:
             try:
                 # Проверяем данные по существующей схеме
                 validate(instance=data, schema=existing_schema, format_checker=FormatChecker())
             except ValidationError as e:
-                pytest.fail(f"\n\n{differences}\n\nValidation error in '{name}': {e.message}")
+                pytest.fail(f"\n\n{differences}\n\nValidation error in `{name}`: {e.message}")
 
 
     def cleanup_unused_schemas(self) -> None:
@@ -87,9 +96,9 @@ class SchemaShot:
             if schema_file.name not in self.used_schemas:
                 if self.update_mode:
                     schema_file.unlink()
-                    print(f"Unused schema deleted: {schema_file.name}")
+                    self.logger.info(f"Unused schema deleted: `{schema_file.name}`")
                 else:
-                    pytest.skip(f"Unused schema found: {schema_file.name}. Use --schema-update to delete it.")
+                    pytest.skip(f"Unused schema found: `{schema_file.name}`. Use `--schema-update` to delete it.")
 
     def _compare_schemas(self, old_schema: Dict[str, Any], new_schema: Dict[str, Any]) -> str:
         """Сравнивает две схемы и возвращает описание различий."""
