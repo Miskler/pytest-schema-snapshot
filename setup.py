@@ -9,7 +9,7 @@ setup(
         'genson',
         'jsonschema',
         'pytest',
-    ]
+    ],
     author='Miskler',
     description='Pytest plugin for automatic JSON Schema generation and validation from examples',
     long_description=open('README.md', encoding="utf-8").read(),
