@@ -31,6 +31,7 @@ def schemashot(request: pytest.FixtureRequest) -> Generator[SchemaShot, None, No
     _used_schemas.update(shot.used_schemas)
 
 
+@pytest.hookimpl
 def pytest_unconfigure(config: pytest.Config) -> None:
     """
     Хук, который отрабатывает после завершения всех тестов.
