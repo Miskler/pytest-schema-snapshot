@@ -81,7 +81,7 @@ class SchemaShot:
         # Проверяем, нужно ли обновить схему
         if existing_schema != current_schema and self.update_mode:
             self._save_schema(current_schema, schema_path)
-            pytest.skip(f"Schema `{name}` updated.\n\n{differences}")
+            self.logger.warning(f"Schema `{name}` updated.\n\n{differences}")
         else:
             try:
                 # Проверяем данные по существующей схеме
@@ -96,9 +96,9 @@ class SchemaShot:
             if schema_file.name not in self.used_schemas:
                 if self.update_mode:
                     schema_file.unlink()
-                    self.logger.info(f"Unused schema deleted: `{schema_file.name}`")
+                    self.logger.warning(f"Unused schema deleted: `{schema_file.name}`")
                 else:
-                    pytest.skip(f"Unused schema found: `{schema_file.name}`. Use `--schema-update` to delete it.")
+                    self.logger.warning(f"Unused schema found: `{schema_file.name}`. Use `--schema-update` to delete it.")
 
     def _compare_schemas(self, old_schema: Dict[str, Any], new_schema: Dict[str, Any]) -> str:
         """Сравнивает две схемы и возвращает описание различий."""

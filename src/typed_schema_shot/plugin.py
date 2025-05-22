@@ -1,6 +1,5 @@
 from pathlib import Path
 import pytest
-from typing import Generator
 from .core import SchemaShot
 
 def pytest_addoption(parser: pytest.Parser) -> None:
@@ -10,6 +9,9 @@ def pytest_addoption(parser: pytest.Parser) -> None:
         action="store_true",
         help="Обновить или создать JSON Schema файлы на основе текущих данных"
     )
+
+# Хранилище на уровне плагина
+_used_schemas: set[str] = set()
 
 @pytest.fixture
 def schemashot(request: pytest.FixtureRequest) -> Generator[SchemaShot, None, None]:
@@ -26,6 +28,14 @@ def schemashot(request: pytest.FixtureRequest) -> Generator[SchemaShot, None, No
     
     shot = SchemaShot(root_dir, update_mode)
     yield shot
-    
-    # Очистка неиспользуемых схем после завершения тестов
-    shot.cleanup_unused_schemas()
+    # Собираем имена, но НЕ удаляем
+    _used_schemas.update(shot.used_schemas)
+
+def pytest_sessionfinish(session, exitstatus):
+    from .core import SchemaShot
+    # Удаляем «лишние» схемы только здесь
+    update_mode = bool(session.config.getoption("--schema-update"))
+    snapshot_dir = Path(session.config.rootpath) / "__snapshots__"
+    for schema_file in snapshot_dir.glob("*.schema.json"):
+        if schema_file.name not in _used_schemas and update_mode:
+            schema_file.unlink()
