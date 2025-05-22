@@ -12,10 +12,20 @@ authors = [
   { name = "Miskler" }
 ]
 license = { text = "MIT" }
-urls = { 
-  "Homepage" = "https://github.com/Open-Inflation/pytest-typed-schema-shot"
-}
 keywords = ["pytest", "json", "schema", "validation", "genson", "click"]
+dependencies = [
+  "click",
+  "genson",
+  "jsonschema",
+  "pytest"
+]
+requires-python = ">=3.10"
+
+[project.urls]
+Homepage = "https://github.com/Open-Inflation/pytest-typed-schema-shot"
+
+[project.classifiers]
+# Classified under PEP 621, although some tools may need them under project.classifiers
 classifiers = [
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3.10",
@@ -31,16 +41,9 @@ classifiers = [
   "Topic :: Internet",
   "Topic :: Utilities"
 ]
-dependencies = [
-  "click",
-  "genson",
-  "jsonschema",
-  "pytest"
-]
-requires-python = ">=3.10"
 
 [project.entry-points]
-pytest11 = { schemashot = "typed_schema_shot.plugin" }
+pytest11 = { "schemashot" = "typed_schema_shot.plugin" }
 
 [tool.hatch.build]
 targets = ["wheel"]
