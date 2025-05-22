@@ -1,5 +1,5 @@
 [build-system]
-requires = ["hatchling"]
+requires = ["hatchling>=1.0"]
 build-backend = "hatchling.build"
 
 [project]
@@ -8,24 +8,12 @@ version = "0.1.1"
 description = "Pytest plugin for automatic JSON Schema generation and validation from examples"
 readme = "README.md"
 readme-content-type = "text/markdown"
+requires-python = ">=3.10"
 authors = [
   { name = "Miskler" }
 ]
 license = { text = "MIT" }
 keywords = ["pytest", "json", "schema", "validation", "genson", "click"]
-dependencies = [
-  "click",
-  "genson",
-  "jsonschema",
-  "pytest"
-]
-requires-python = ">=3.10"
-
-[project.urls]
-Homepage = "https://github.com/Open-Inflation/pytest-typed-schema-shot"
-
-[project.classifiers]
-# Classified under PEP 621, although some tools may need them under project.classifiers
 classifiers = [
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3.10",
@@ -36,17 +24,19 @@ classifiers = [
   "Operating System :: Microsoft :: Windows",
   "Operating System :: POSIX :: Linux",
   "Intended Audience :: Developers",
-  "Intended Audience :: Information Technology",
   "Topic :: Software Development :: Libraries :: Python Modules",
-  "Topic :: Internet",
   "Topic :: Utilities"
 ]
+dependencies = [
+  "click",
+  "genson",
+  "jsonschema",
+  "pytest"
+]
+urls = { Homepage = "https://github.com/Open-Inflation/pytest-typed-schema-shot" }
 
-[project.entry-points]
-pytest11 = { "schemashot" = "typed_schema_shot.plugin" }
-
-[tool.hatch.build]
-targets = ["wheel"]
+[project.entry-points."pytest11"]
+schemashot = "typed_schema_shot.plugin"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/typed_schema_shot"]
