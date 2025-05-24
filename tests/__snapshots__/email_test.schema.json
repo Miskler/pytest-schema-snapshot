@@ -1,0 +1,18 @@
+{
+  "$schema": "http://json-schema.org/schema#",
+  "type": "object",
+  "properties": {
+    "user_email": {
+      "type": "string",
+      "format": "email"
+    },
+    "admin_email": {
+      "type": "string",
+      "format": "email"
+    }
+  },
+  "required": [
+    "admin_email",
+    "user_email"
+  ]
+}
