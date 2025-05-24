@@ -1,0 +1,18 @@
+{
+  "$schema": "http://json-schema.org/schema#",
+  "type": "object",
+  "properties": {
+    "website": {
+      "type": "string",
+      "format": "uri"
+    },
+    "api_endpoint": {
+      "type": "string",
+      "format": "uri"
+    }
+  },
+  "required": [
+    "api_endpoint",
+    "website"
+  ]
+}

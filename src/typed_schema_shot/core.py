@@ -4,7 +4,7 @@ from typing import Any, Dict, Set, Optional
 import pytest
 from jsonschema import validate, ValidationError, FormatChecker
 from .compare_schemas import SchemaComparator
-from genson import SchemaBuilder
+from .schema_builder import EnhancedSchemaBuilder
 import logging
 
 
@@ -79,7 +79,7 @@ class SchemaShot:
         self.used_schemas.add(schema_path.name)
         
         # Генерируем текущую схему
-        builder = SchemaBuilder()
+        builder = EnhancedSchemaBuilder()
         builder.add_object(data)
         current_schema = builder.to_schema()
         

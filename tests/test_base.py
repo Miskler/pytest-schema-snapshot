@@ -157,8 +157,10 @@ def test_creating_brand_new_schema(schemashot):
         "brand_new_features": ["feature1", "feature2"],
         "brand_new_metadata": {
             "version": "1.0.0",
-            "created_at": "2024-01-15"
-        }
+            "created_at": "2024-01-15",
+            "updated_at": "2024-01-16"
+        },
+        "brand_new_status": "active"
     }
     
     # Этот assert должен создать новую схему в режиме --schema-update

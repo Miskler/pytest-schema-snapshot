@@ -15,6 +15,9 @@
 * Automatic JSON Schema generation from data examples (using the `genson` library).
 
   Автоматическая генерация JSON Schema по примерам данных (на основе библиотеки `genson`).
+* **Format detection**: Automatic detection and validation of string formats (email, UUID, date, date-time, URI, IPv4).
+
+  **Обнаружение форматов**: Автоматическое обнаружение и валидация форматов строк (email, UUID, date, date-time, URI, IPv4).
 * Schema storage and management.
 
   Хранение и управление схемами.
@@ -100,6 +103,15 @@ pip install pytest-typed-schema-shot
 * **Optional Fields**: automatic detection of required and optional fields
 
     Автоматическое определение обязательных и необязательных полей.
+* **Format Detection**: automatic detection of string formats including:
+  - **Email**: `user@example.com` → `{"type": "string", "format": "email"}`
+  - **UUID**: `550e8400-e29b-41d4-a716-446655440000` → `{"type": "string", "format": "uuid"}`
+  - **Date**: `2023-01-15` → `{"type": "string", "format": "date"}`
+  - **Date-Time**: `2023-01-01T12:00:00Z` → `{"type": "string", "format": "date-time"}`
+  - **URI**: `https://example.com` → `{"type": "string", "format": "uri"}`
+  - **IPv4**: `192.168.1.1` → `{"type": "string", "format": "ipv4"}`
+
+    **Обнаружение форматов**: автоматическое определение форматов строк с поддержкой валидации.
 * **Cleanup**: automatic removal of unused schemas when running in update mode
 
     Автоматическое удаление неиспользуемых схем в режиме обновления.
@@ -113,6 +125,21 @@ pip install pytest-typed-schema-shot
 
 The plugin supports the following pytest options:
 - `--schema-update`: Enable schema update mode (create new, update existing, delete unused schemas)
+
+You can also configure the plugin via `pytest.ini`:
+
+```ini
+[tool:pytest]
+# Custom directory for storing schemas (default: __snapshots__)
+schema_shot_dir = schema_files
+```
+
+Or in `pyproject.toml`:
+
+```toml
+[tool.pytest.ini_options]
+schema_shot_dir = "schema_files"
+```
 
 ### Schema Summary
 

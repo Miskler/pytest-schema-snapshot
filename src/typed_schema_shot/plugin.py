@@ -1,8 +1,9 @@
 from pathlib import Path
 import pytest
 import logging
-from typing import Generator, Dict, Optional, Set, List, Any, Union
+from typing import Generator, Dict, Optional, Set, List, Any, Union, Tuple
 from .core import SchemaShot
+from .compare_schemas import SchemaComparator
 
 # Глобальное хранилище экземпляров SchemaShot для различных директорий
 _schema_managers: Dict[Path, SchemaShot] = {}
@@ -89,14 +90,22 @@ class SchemaStats:
     def __init__(self):
         self.created: List[str] = []
         self.updated: List[str] = []
+        self.updated_diffs: Dict[str, str] = {}  # schema_name -> diff
         self.deleted: List[str] = []
         self.unused: List[str] = []
         
     def add_created(self, schema_name: str) -> None:
         self.created.append(schema_name)
         
-    def add_updated(self, schema_name: str) -> None:
+    def add_updated(self, schema_name: str, old_schema: Optional[Dict[str, Any]] = None, new_schema: Optional[Dict[str, Any]] = None) -> None:
         self.updated.append(schema_name)
+        
+        # Генерируем diff если предоставлены обе схемы
+        if old_schema and new_schema:
+            comparator = SchemaComparator(old_schema, new_schema)
+            diff = comparator.compare()
+            if diff.strip():  # Только если есть реальные различия
+                self.updated_diffs[schema_name] = diff
         
     def add_deleted(self, schema_name: str) -> None:
         self.deleted.append(schema_name)
