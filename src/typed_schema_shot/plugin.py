@@ -36,7 +36,7 @@ def schemashot(request: pytest.FixtureRequest) -> Generator[SchemaShot, None, No
     update_mode = bool(request.config.getoption("--schema-update"))
     
     # Получаем настраиваемую директорию для схем
-    schema_dir_name = request.config.getini("schema_shot_dir") or "__snapshots__"
+    schema_dir_name = str(request.config.getini("schema_shot_dir") or "__snapshots__")
     
     # Создаем или получаем экземпляр SchemaShot для этой директории
     if root_dir not in _schema_managers:
@@ -59,6 +59,11 @@ def schemashot(request: pytest.FixtureRequest) -> Generator[SchemaShot, None, No
             schema_path = self._get_schema_path(name)
             schema_exists = schema_path.exists()
             
+            # Загружаем старую схему если она существует
+            old_schema = None
+            if schema_exists:
+                old_schema = self._load_schema(schema_path)
+            
             # Вызываем оригинальный метод
             try:
                 result = super().assert_match(data, name)
@@ -70,9 +75,9 @@ def schemashot(request: pytest.FixtureRequest) -> Generator[SchemaShot, None, No
             
             # Отслеживаем события для существующих схем
             if self.update_mode and schema_exists:
-                # Если схема была обновлена
-                if result is True:
-                    _schema_stats.add_updated(schema_path.name)
+                # Загружаем новую схему для сравнения (схема могла быть обновлена)
+                new_schema = self._load_schema(schema_path)
+                _schema_stats.add_updated(schema_path.name, old_schema, new_schema)
             
             return result
     
@@ -98,14 +103,17 @@ class SchemaStats:
         self.created.append(schema_name)
         
     def add_updated(self, schema_name: str, old_schema: Optional[Dict[str, Any]] = None, new_schema: Optional[Dict[str, Any]] = None) -> None:
-        self.updated.append(schema_name)
-        
         # Генерируем diff если предоставлены обе схемы
         if old_schema and new_schema:
             comparator = SchemaComparator(old_schema, new_schema)
             diff = comparator.compare()
-            if diff.strip():  # Только если есть реальные различия
+            # Добавляем в updated только если есть реальные изменения
+            if diff and diff.strip():
+                self.updated.append(schema_name)
                 self.updated_diffs[schema_name] = diff
+        else:
+            # Если схемы не предоставлены, считаем что было обновление
+            self.updated.append(schema_name)
         
     def add_deleted(self, schema_name: str) -> None:
         self.deleted.append(schema_name)
@@ -184,6 +192,16 @@ def pytest_terminal_summary(terminalreporter, exitstatus: int) -> None:
         terminalreporter.write_line(f"Updated schemas ({len(_schema_stats.updated)}):", yellow=True)
         for schema in _schema_stats.updated:
             terminalreporter.write_line(f"  - {schema}", yellow=True)
+            # Показываем diff если он есть
+            if schema in _schema_stats.updated_diffs:
+                terminalreporter.write_line("    Changes:", yellow=True)
+                # Выводим diff построчно с отступом
+                for line in _schema_stats.updated_diffs[schema].split('\n'):
+                    if line.strip():
+                        terminalreporter.write_line(f"      {line}")
+                terminalreporter.write_line("")  # Пустая строка для разделения
+            else:
+                terminalreporter.write_line("    (Schema unchanged - no differences detected)", cyan=True)
     
     if _schema_stats.deleted:
         terminalreporter.write_line(f"Deleted schemas ({len(_schema_stats.deleted)}):", red=True)

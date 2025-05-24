@@ -1,0 +1,51 @@
+{
+  "$schema": "http://json-schema.org/schema#",
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "integer"
+    },
+    "username": {
+      "type": "string"
+    },
+    "profile": {
+      "type": "object",
+      "properties": {
+        "bio": {
+          "type": "string"
+        },
+        "settings": {
+          "type": "object",
+          "properties": {
+            "theme": {
+              "type": "string"
+            },
+            "notifications": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "notifications",
+            "theme"
+          ]
+        }
+      },
+      "required": [
+        "bio",
+        "settings"
+      ]
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "required": [
+    "profile",
+    "tags",
+    "user_id",
+    "username"
+  ]
+}

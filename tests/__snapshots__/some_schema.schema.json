@@ -1,0 +1,155 @@
+{
+  "$schema": "http://json-schema.org/schema#",
+  "type": "object",
+  "properties": {
+    "обязательная": {
+      "type": "string"
+    },
+    "необязательная": {
+      "type": "null"
+    },
+    "словарь": {
+      "type": "object",
+      "properties": {
+        "ключ": {
+          "type": "string"
+        },
+        "число": {
+          "type": "integer"
+        },
+        "булево": {
+          "type": "boolean"
+        },
+        "список": {
+          "type": "array",
+          "items": {
+            "type": "integer"
+          }
+        },
+        "вложенный_словарь": {
+          "type": "object",
+          "properties": {
+            "пустое": {
+              "type": "null"
+            }
+          },
+          "required": [
+            "пустое"
+          ]
+        },
+        "пустой_словарь": {
+          "type": "object"
+        },
+        "пустой_список": {
+          "type": "array"
+        },
+        "пустое_значение": {
+          "type": "string"
+        },
+        "пустое_число": {
+          "type": "integer"
+        },
+        "дополнительное_поле": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "булево",
+        "вложенный_словарь",
+        "дополнительное_поле",
+        "ключ",
+        "пустое_значение",
+        "пустое_число",
+        "пустой_словарь",
+        "пустой_список",
+        "список",
+        "число"
+      ]
+    },
+    "сложная_структура": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "имя": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            ]
+          },
+          "почта": {
+            "type": "string",
+            "format": "email"
+          },
+          "возраст": {
+            "type": "number"
+          },
+          "дата": {
+            "type": "string"
+          },
+          "вложенный_объект": {
+            "type": "object",
+            "properties": {
+              "ключ": {
+                "type": "string"
+              },
+              "лишний_ключ": {
+                "type": "null"
+              }
+            },
+            "required": [
+              "ключ"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "вложенный_объект",
+          "возраст",
+          "имя"
+        ]
+      }
+    },
+    "разнотипный_массив": {
+      "type": "array",
+      "items": {
+        "anyOf": [
+          {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "ключ": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "ключ"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "required": [
+    "необязательная",
+    "обязательная",
+    "разнотипный_массив",
+    "словарь",
+    "сложная_структура"
+  ]
+}

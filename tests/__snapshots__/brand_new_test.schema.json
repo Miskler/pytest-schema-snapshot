@@ -1,0 +1,49 @@
+{
+  "$schema": "http://json-schema.org/schema#",
+  "type": "object",
+  "properties": {
+    "brand_new_id": {
+      "type": "integer"
+    },
+    "brand_new_name": {
+      "type": "string"
+    },
+    "brand_new_features": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "brand_new_metadata": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "type": "string"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date"
+        }
+      },
+      "required": [
+        "created_at",
+        "updated_at",
+        "version"
+      ]
+    },
+    "brand_new_status": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "brand_new_features",
+    "brand_new_id",
+    "brand_new_metadata",
+    "brand_new_name",
+    "brand_new_status"
+  ]
+}
