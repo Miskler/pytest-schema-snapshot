@@ -10,6 +10,9 @@
 
 **Плагин для pytest, который автоматически генерирует JSON Schema на основе примеров данных и проверяет данные по сохраненным схемам.**
 
+![image](https://github.com/user-attachments/assets/2faa2548-5af2-4dc9-8d8d-b32db1d87be8)
+
+
 ## Features
 
 * Automatic JSON Schema generation from data examples (using the `genson` library).
