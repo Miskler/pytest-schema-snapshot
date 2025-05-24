@@ -1,0 +1,18 @@
+{
+  "$schema": "http://json-schema.org/schema#",
+  "type": "object",
+  "properties": {
+    "server_ip": {
+      "type": "string",
+      "format": "ipv4"
+    },
+    "gateway": {
+      "type": "string",
+      "format": "ipv4"
+    }
+  },
+  "required": [
+    "gateway",
+    "server_ip"
+  ]
+}

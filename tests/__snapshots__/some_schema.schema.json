@@ -95,7 +95,8 @@
             "type": "number"
           },
           "дата": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "вложенный_объект": {
             "type": "object",

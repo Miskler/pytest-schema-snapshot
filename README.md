@@ -2,6 +2,7 @@
 
 ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/pytest-typed-schema-shot)
 ![PyPI - Package Version](https://img.shields.io/pypi/v/pytest-typed-schema-shot?color=blue)
+[![Tests](https://github.com/Open-Inflation/pytest-typed-schema-shot/actions/workflows/ci.yml/badge.svg)](https://github.com/Open-Inflation/pytest-typed-schema-shot/actions/workflows/ci.yml)
 [![PyPI - Downloads](https://img.shields.io/pypi/dm/pytest-typed-schema-shot?label=PyPi%20downloads)](https://pypi.org/project/pytest-typed-schema-shot/)
 [![Discord](https://img.shields.io/discord/792572437292253224?label=Discord&labelColor=%232c2f33&color=%237289da)](https://discord.gg/UnJnGHNbBp)
 [![Telegram](https://img.shields.io/badge/Telegram-24A1DE)](https://t.me/miskler_dev)

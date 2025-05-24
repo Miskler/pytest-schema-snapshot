@@ -1,0 +1,38 @@
+{
+  "$schema": "http://json-schema.org/schema#",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "email": {
+      "type": "string",
+      "format": "email"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "birth_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "website": {
+      "type": "string",
+      "format": "uri"
+    },
+    "ip_address": {
+      "type": "string",
+      "format": "ipv4"
+    }
+  },
+  "required": [
+    "birth_date",
+    "created_at",
+    "email",
+    "id",
+    "ip_address",
+    "website"
+  ]
+}
