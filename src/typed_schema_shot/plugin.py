@@ -4,6 +4,7 @@ import logging
 from typing import Generator, Dict, Optional, Set, List, Any, Union, Tuple
 from .core import SchemaShot
 from .compare_schemas import SchemaComparator
+from .schema_builder import EnhancedSchemaBuilder
 
 # Глобальное хранилище экземпляров SchemaShot для различных директорий
 _schema_managers: Dict[Path, SchemaShot] = {}
@@ -67,13 +68,25 @@ def schemashot(request: pytest.FixtureRequest) -> Generator[SchemaShot, None, No
             # Вызываем оригинальный метод
             try:
                 result = super().assert_match(data, name)
+                
+                # Если тест прошел успешно и мы НЕ в режиме обновления,
+                # проверяем есть ли незафиксированные изменения
+                if not self.update_mode and schema_exists and old_schema:
+                    # Генерируем схему из текущих данных
+                    builder = EnhancedSchemaBuilder()
+                    builder.add_object(data)
+                    current_schema = builder.to_schema()
+                    
+                    # Сравниваем с существующей схемой
+                    _schema_stats.add_uncommitted(schema_path.name, old_schema, current_schema)
+                
             except pytest.skip.Exception:
                 # Новая схема была создана (pytest.skip вызван в core.py)
                 if self.update_mode and not schema_exists and schema_path.exists():
                     _schema_stats.add_created(schema_path.name)
                 raise  # Пробрасываем skip дальше
             
-            # Отслеживаем события для существующих схем
+            # Отслеживаем события для существующих схем в режиме обновления
             if self.update_mode and schema_exists:
                 # Загружаем новую схему для сравнения (схема могла быть обновлена)
                 new_schema = self._load_schema(schema_path)
@@ -96,6 +109,8 @@ class SchemaStats:
         self.created: List[str] = []
         self.updated: List[str] = []
         self.updated_diffs: Dict[str, str] = {}  # schema_name -> diff
+        self.uncommitted: List[str] = []  # Новая категория для незафиксированных изменений
+        self.uncommitted_diffs: Dict[str, str] = {}  # schema_name -> diff
         self.deleted: List[str] = []
         self.unused: List[str] = []
         
@@ -114,6 +129,15 @@ class SchemaStats:
         else:
             # Если схемы не предоставлены, считаем что было обновление
             self.updated.append(schema_name)
+    
+    def add_uncommitted(self, schema_name: str, old_schema: Dict[str, Any], new_schema: Dict[str, Any]) -> None:
+        """Добавляет схему с незафиксированными изменениями"""
+        comparator = SchemaComparator(old_schema, new_schema)
+        diff = comparator.compare()
+        # Добавляем только если есть реальные изменения
+        if diff and diff.strip():
+            self.uncommitted.append(schema_name)
+            self.uncommitted_diffs[schema_name] = diff
         
     def add_deleted(self, schema_name: str) -> None:
         self.deleted.append(schema_name)
@@ -125,7 +149,7 @@ class SchemaStats:
         return bool(self.created or self.updated or self.deleted)
     
     def has_any_info(self) -> bool:
-        return bool(self.created or self.updated or self.deleted or self.unused)
+        return bool(self.created or self.updated or self.deleted or self.unused or self.uncommitted)
     
     def __str__(self) -> str:
         parts = []
@@ -202,6 +226,20 @@ def pytest_terminal_summary(terminalreporter, exitstatus: int) -> None:
                 terminalreporter.write_line("")  # Пустая строка для разделения
             else:
                 terminalreporter.write_line("    (Schema unchanged - no differences detected)", cyan=True)
+    
+    if _schema_stats.uncommitted:
+        terminalreporter.write_line(f"Uncommitted minor updates ({len(_schema_stats.uncommitted)}):", bold=True)
+        for schema in _schema_stats.uncommitted:
+            terminalreporter.write_line(f"  - {schema}", cyan=True)
+            # Показываем diff для незафиксированных изменений
+            if schema in _schema_stats.uncommitted_diffs:
+                terminalreporter.write_line("    Detected changes:", cyan=True)
+                # Выводим diff построчно с отступом
+                for line in _schema_stats.uncommitted_diffs[schema].split('\n'):
+                    if line.strip():
+                        terminalreporter.write_line(f"      {line}")
+                terminalreporter.write_line("")  # Пустая строка для разделения
+        terminalreporter.write_line("Use --schema-update to commit these changes", cyan=True)
     
     if _schema_stats.deleted:
         terminalreporter.write_line(f"Deleted schemas ({len(_schema_stats.deleted)}):", red=True)
