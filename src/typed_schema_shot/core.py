@@ -1,6 +1,6 @@
 import json
 from pathlib import Path
-from typing import Any, Dict, Set
+from typing import Any, Dict, Set, Optional
 import pytest
 from jsonschema import validate, ValidationError, FormatChecker
 from .compare_schemas import SchemaComparator
@@ -9,17 +9,18 @@ import logging
 
 
 class SchemaShot:
-    def __init__(self, root_dir: Path, update_mode: bool = False):
+    def __init__(self, root_dir: Path, update_mode: bool = False, snapshot_dir_name: str = "__snapshots__"):
         """
         Инициализация SchemaShot.
         
         Args:
             root_dir: Корневая директория проекта
             update_mode: Режим обновления схем (--schema-update)
+            snapshot_dir_name: Имя директории для снэпшотов
         """
         self.root_dir = root_dir
         self.update_mode = update_mode
-        self.snapshot_dir = root_dir / '__snapshots__'
+        self.snapshot_dir = root_dir / snapshot_dir_name
         self.used_schemas: Set[str] = set()
 
         self.logger = logging.getLogger(__name__)
@@ -48,15 +49,31 @@ class SchemaShot:
         with open(path, 'r', encoding='utf-8') as f:
             return json.load(f)
 
-    def assert_match(self, data: Any, name: str) -> None:
+    def assert_match(self, data: Any, name: str) -> Optional[bool]:
         """
         Проверяет соответствие данных схеме.
         
         Args:
             data: Данные для проверки
             name: Имя схемы
+            
+        Returns:
+            True, если схема была обновлена, False, если не было обновления,
+            None, если была создана новая схема
+            
+        Raises:
+            ValueError: Если name содержит недопустимые символы
         """
         __tracebackhide__ = True  # Прячем эту функцию из стека вызовов pytest
+        
+        # Валидация имени схемы
+        if not name or not isinstance(name, str):
+            raise ValueError("Schema name must be a non-empty string")
+        
+        # Проверяем на недопустимые символы для имени файла
+        invalid_chars = '<>:"/\\|?*'
+        if any(char in name for char in invalid_chars):
+            raise ValueError(f"Schema name contains invalid characters: {invalid_chars}")
         
         schema_path = self._get_schema_path(name)
         self.used_schemas.add(schema_path.name)
@@ -72,33 +89,35 @@ class SchemaShot:
             
             self._save_schema(current_schema, schema_path)
             pytest.skip(f"New schema `{name}` has been created.")
-            return
+            return None
             
         # Загружаем существующую схему
         existing_schema = self._load_schema(schema_path)
         
-        differences = self._compare_schemas(existing_schema, current_schema)
         # Проверяем, нужно ли обновить схему
-        if existing_schema != current_schema and self.update_mode:
-            self._save_schema(current_schema, schema_path)
-            self.logger.warning(f"Schema `{name}` updated.\n\n{differences}")
+        schema_updated = False
+        if existing_schema != current_schema:
+            differences = self._compare_schemas(existing_schema, current_schema)
+            
+            if self.update_mode:
+                self._save_schema(current_schema, schema_path)
+                self.logger.warning(f"Schema `{name}` updated.\n\n{differences}")
+                schema_updated = True
+            else:
+                try:
+                    # Проверяем данные по существующей схеме
+                    validate(instance=data, schema=existing_schema, format_checker=FormatChecker())
+                except ValidationError as e:
+                    pytest.fail(f"\n\n{differences}\n\nValidation error in `{name}`: {e.message}")
         else:
+            # Валидация в любом случае
             try:
-                # Проверяем данные по существующей схеме
                 validate(instance=data, schema=existing_schema, format_checker=FormatChecker())
             except ValidationError as e:
+                differences = self._compare_schemas(existing_schema, current_schema)
                 pytest.fail(f"\n\n{differences}\n\nValidation error in `{name}`: {e.message}")
-
-
-    def cleanup_unused_schemas(self) -> None:
-        """Удаляет неиспользованные схемы в режиме обновления."""
-        for schema_file in self.snapshot_dir.glob("*.schema.json"):
-            if schema_file.name not in self.used_schemas:
-                if self.update_mode:
-                    schema_file.unlink()
-                    self.logger.warning(f"Unused schema deleted: `{schema_file.name}`")
-                else:
-                    self.logger.warning(f"Unused schema found: `{schema_file.name}`. Use `--schema-update` to delete it.")
+        
+        return schema_updated
 
     def _compare_schemas(self, old_schema: Dict[str, Any], new_schema: Dict[str, Any]) -> str:
         """Сравнивает две схемы и возвращает описание различий."""

@@ -103,3 +103,44 @@ pip install pytest-typed-schema-shot
 * **Cleanup**: automatic removal of unused schemas when running in update mode
 
     Автоматическое удаление неиспользуемых схем в режиме обновления.
+* **Schema Summary**: colored terminal output showing created, updated, deleted and unused schemas
+
+    Цветной вывод в терминале с информацией о созданных, обновленных, удаленных и неиспользуемых схемах.
+
+## Advanced Usage
+
+### Configuration Options
+
+The plugin supports the following pytest options:
+- `--schema-update`: Enable schema update mode (create new, update existing, delete unused schemas)
+
+### Schema Summary
+
+The plugin automatically shows a summary at the end of test execution:
+
+```
+======== Schema Summary ========
+Created schemas (1):
+  - new_api_schema.schema.json
+Updated schemas (1):  
+  - user_profile.schema.json
+Unused schemas (2):
+  - old_feature.schema.json
+  - deprecated_api.schema.json
+Use --schema-update to delete unused schemas
+```
+
+### Best Practices
+
+1. **Commit schemas to version control**: Schemas should be part of your repository
+2. **Review schema changes**: When schemas change, review the diffs carefully
+3. **Clean up regularly**: Use `--schema-update` periodically to remove unused schemas
+4. **Descriptive names**: Use clear, descriptive names for your schemas
+
+### Troubleshooting
+
+**Schema not found error**: Run tests with `--schema-update` to create missing schemas
+
+**Validation errors**: Check if your data structure has changed and update schemas accordingly
+
+**Permission errors**: Ensure your test directory is writable

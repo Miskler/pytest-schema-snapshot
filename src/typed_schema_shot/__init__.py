@@ -8,5 +8,8 @@ pytest-typed-schema-shot
 
 from .core import SchemaShot
 
-__version__ = "0.1.0"
+__version__ = "0.1.5"
 __all__ = ["SchemaShot"]
+
+# Публичное API
+assert_match = SchemaShot.assert_match

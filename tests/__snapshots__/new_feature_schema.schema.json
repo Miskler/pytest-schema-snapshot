@@ -1,0 +1,55 @@
+{
+  "$schema": "http://json-schema.org/schema#",
+  "type": "object",
+  "properties": {
+    "feature_id": {
+      "type": "string"
+    },
+    "enabled": {
+      "type": "boolean"
+    },
+    "config": {
+      "type": "object",
+      "properties": {
+        "timeout": {
+          "type": "number"
+        },
+        "retries": {
+          "type": "integer"
+        },
+        "endpoints": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "endpoints",
+        "retries",
+        "timeout"
+      ]
+    },
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "created_by": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "created_by",
+        "version"
+      ]
+    }
+  },
+  "required": [
+    "config",
+    "enabled",
+    "feature_id",
+    "metadata"
+  ]
+}

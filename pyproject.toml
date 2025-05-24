@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "pytest-typed-schema-shot"
-version = "0.1.4"
+version = "0.1.5"
 description = "Pytest plugin for automatic JSON Schema generation and validation from examples"
 readme = "README.md"
 readme-content-type = "text/markdown"

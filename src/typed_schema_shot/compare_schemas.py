@@ -4,7 +4,7 @@
 from typing import Any, Dict, List, Tuple, Optional
 import json
 import click
-from . import cfg as CONGIG
+from . import cfg as CONFIG
 
 
 class SchemaComparator:
@@ -24,7 +24,7 @@ class SchemaComparator:
 
     def _format_output(self, text: str, mode: str = "no_diff") -> str:
         """Форматирует вывод с помощью Click."""
-        return click.style(f'{CONGIG.modes[mode]["symbol"]} {text}', fg=CONGIG.modes[mode]["color"], bold=True)
+        return click.style(f'{CONFIG.modes[mode]["symbol"]} {text}', fg=CONFIG.modes[mode]["color"], bold=True)
 
     def _find_differences(
         self, old: Any, new: Any, path: Optional[List[str]] = None
