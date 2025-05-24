@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "pytest-typed-schema-shot"
-version = "0.1.7"
+dynamic = ["version"]
 description = "Pytest plugin for automatic JSON Schema generation and validation from examples"
 readme = "README.md"
 readme-content-type = "text/markdown"
@@ -37,6 +37,9 @@ urls = { Homepage = "https://github.com/Open-Inflation/pytest-typed-schema-shot"
 
 [project.entry-points."pytest11"]
 schemashot = "typed_schema_shot.plugin"
+
+[tool.hatch.version]
+path = "src/typed_schema_shot/__init__.py"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/typed_schema_shot"]
