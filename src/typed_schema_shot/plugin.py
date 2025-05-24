@@ -3,8 +3,8 @@ import pytest
 import logging
 from typing import Generator, Dict, Optional, Set, List, Any, Union, Tuple
 from .core import SchemaShot
-from .compare_schemas import SchemaComparator
-from .schema_builder import EnhancedSchemaBuilder
+from .stats import SchemaStats, print_schema_summary
+from .tracking import TrackedSchemaShot, cleanup_unused_schemas
 
 # Глобальное хранилище экземпляров SchemaShot для различных директорий
 _schema_managers: Dict[Path, SchemaShot] = {}
@@ -43,127 +43,13 @@ def schemashot(request: pytest.FixtureRequest) -> Generator[SchemaShot, None, No
     if root_dir not in _schema_managers:
         _schema_managers[root_dir] = SchemaShot(root_dir, update_mode, schema_dir_name)
     
-    # Создаем расширенный класс SchemaShot с перехватом событий
-    class TrackedSchemaShot(SchemaShot):
-        """Расширение SchemaShot с отслеживанием событий для статистики"""
-        
-        def __init__(self, parent: SchemaShot):
-            # Копируем атрибуты из родительского экземпляра
-            self.root_dir = parent.root_dir
-            self.update_mode = parent.update_mode
-            self.snapshot_dir = parent.snapshot_dir
-            self.used_schemas = parent.used_schemas
-            self.logger = parent.logger
-        
-        def assert_match(self, data: Any, name: str) -> Optional[bool]:
-            """Обертка для отслеживания создания/обновления схем"""
-            schema_path = self._get_schema_path(name)
-            schema_exists = schema_path.exists()
-            
-            # Загружаем старую схему если она существует
-            old_schema = None
-            if schema_exists:
-                old_schema = self._load_schema(schema_path)
-            
-            # Вызываем оригинальный метод
-            try:
-                result = super().assert_match(data, name)
-                
-                # Если тест прошел успешно и мы НЕ в режиме обновления,
-                # проверяем есть ли незафиксированные изменения
-                if not self.update_mode and schema_exists and old_schema:
-                    # Генерируем схему из текущих данных
-                    builder = EnhancedSchemaBuilder()
-                    builder.add_object(data)
-                    current_schema = builder.to_schema()
-                    
-                    # Сравниваем с существующей схемой
-                    _schema_stats.add_uncommitted(schema_path.name, old_schema, current_schema)
-                
-            except pytest.skip.Exception:
-                # Новая схема была создана (pytest.skip вызван в core.py)
-                if self.update_mode and not schema_exists and schema_path.exists():
-                    _schema_stats.add_created(schema_path.name)
-                raise  # Пробрасываем skip дальше
-            
-            # Отслеживаем события для существующих схем в режиме обновления
-            if self.update_mode and schema_exists:
-                # Загружаем новую схему для сравнения (схема могла быть обновлена)
-                new_schema = self._load_schema(schema_path)
-                _schema_stats.add_updated(schema_path.name, old_schema, new_schema)
-            
-            return result
-    
     # Создаем локальный экземпляр для теста
-    shot = TrackedSchemaShot(_schema_managers[root_dir])
+    shot = TrackedSchemaShot(_schema_managers[root_dir], _schema_stats)
     yield shot
     
     # Обновляем глобальный экземпляр использованными схемами из этого теста
     if root_dir in _schema_managers:
         _schema_managers[root_dir].used_schemas.update(shot.used_schemas)
-
-
-class SchemaStats:
-    """Класс для сбора и отображения статистики по схемам"""
-    def __init__(self):
-        self.created: List[str] = []
-        self.updated: List[str] = []
-        self.updated_diffs: Dict[str, str] = {}  # schema_name -> diff
-        self.uncommitted: List[str] = []  # Новая категория для незафиксированных изменений
-        self.uncommitted_diffs: Dict[str, str] = {}  # schema_name -> diff
-        self.deleted: List[str] = []
-        self.unused: List[str] = []
-        
-    def add_created(self, schema_name: str) -> None:
-        self.created.append(schema_name)
-        
-    def add_updated(self, schema_name: str, old_schema: Optional[Dict[str, Any]] = None, new_schema: Optional[Dict[str, Any]] = None) -> None:
-        # Генерируем diff если предоставлены обе схемы
-        if old_schema and new_schema:
-            comparator = SchemaComparator(old_schema, new_schema)
-            diff = comparator.compare()
-            # Добавляем в updated только если есть реальные изменения
-            if diff and diff.strip():
-                self.updated.append(schema_name)
-                self.updated_diffs[schema_name] = diff
-        else:
-            # Если схемы не предоставлены, считаем что было обновление
-            self.updated.append(schema_name)
-    
-    def add_uncommitted(self, schema_name: str, old_schema: Dict[str, Any], new_schema: Dict[str, Any]) -> None:
-        """Добавляет схему с незафиксированными изменениями"""
-        comparator = SchemaComparator(old_schema, new_schema)
-        diff = comparator.compare()
-        # Добавляем только если есть реальные изменения
-        if diff and diff.strip():
-            self.uncommitted.append(schema_name)
-            self.uncommitted_diffs[schema_name] = diff
-        
-    def add_deleted(self, schema_name: str) -> None:
-        self.deleted.append(schema_name)
-        
-    def add_unused(self, schema_name: str) -> None:
-        self.unused.append(schema_name)
-    
-    def has_changes(self) -> bool:
-        return bool(self.created or self.updated or self.deleted)
-    
-    def has_any_info(self) -> bool:
-        return bool(self.created or self.updated or self.deleted or self.unused or self.uncommitted)
-    
-    def __str__(self) -> str:
-        parts = []
-        if self.created:
-            parts.append(f"Созданные схемы ({len(self.created)}): " + ", ".join(f"`{s}`" for s in self.created))
-        if self.updated:
-            parts.append(f"Обновленные схемы ({len(self.updated)}): " + ", ".join(f"`{s}`" for s in self.updated))
-        if self.deleted:
-            parts.append(f"Удаленные схемы ({len(self.deleted)}): " + ", ".join(f"`{s}`" for s in self.deleted))
-        if self.unused:
-            parts.append(f"Неиспользуемые схемы ({len(self.unused)}): " + ", ".join(f"`{s}`" for s in self.unused))
-        
-        return "\n".join(parts)
-
 
 # Глобальная статистика
 _schema_stats = SchemaStats()
@@ -198,90 +84,6 @@ def pytest_terminal_summary(terminalreporter, exitstatus: int) -> None:
         for root_dir, manager in _schema_managers.items():
             cleanup_unused_schemas(manager, update_mode, _schema_stats)
     
-    if not _schema_stats.has_any_info():
-        return
-    
+    # Используем новую функцию для вывода статистики
     update_mode = bool(terminalreporter.config.getoption("--schema-update"))
-    
-    # Добавляем заголовок
-    terminalreporter.write_sep("=", "Schema Summary")
-    
-    # Выводим статистику
-    if _schema_stats.created:
-        terminalreporter.write_line(f"Created schemas ({len(_schema_stats.created)}):", green=True)
-        for schema in _schema_stats.created:
-            terminalreporter.write_line(f"  - {schema}", green=True)
-    
-    if _schema_stats.updated:
-        terminalreporter.write_line(f"Updated schemas ({len(_schema_stats.updated)}):", yellow=True)
-        for schema in _schema_stats.updated:
-            terminalreporter.write_line(f"  - {schema}", yellow=True)
-            # Показываем diff если он есть
-            if schema in _schema_stats.updated_diffs:
-                terminalreporter.write_line("    Changes:", yellow=True)
-                # Выводим diff построчно с отступом
-                for line in _schema_stats.updated_diffs[schema].split('\n'):
-                    if line.strip():
-                        terminalreporter.write_line(f"      {line}")
-                terminalreporter.write_line("")  # Пустая строка для разделения
-            else:
-                terminalreporter.write_line("    (Schema unchanged - no differences detected)", cyan=True)
-    
-    if _schema_stats.uncommitted:
-        terminalreporter.write_line(f"Uncommitted minor updates ({len(_schema_stats.uncommitted)}):", bold=True)
-        for schema in _schema_stats.uncommitted:
-            terminalreporter.write_line(f"  - {schema}", cyan=True)
-            # Показываем diff для незафиксированных изменений
-            if schema in _schema_stats.uncommitted_diffs:
-                terminalreporter.write_line("    Detected changes:", cyan=True)
-                # Выводим diff построчно с отступом
-                for line in _schema_stats.uncommitted_diffs[schema].split('\n'):
-                    if line.strip():
-                        terminalreporter.write_line(f"      {line}")
-                terminalreporter.write_line("")  # Пустая строка для разделения
-        terminalreporter.write_line("Use --schema-update to commit these changes", cyan=True)
-    
-    if _schema_stats.deleted:
-        terminalreporter.write_line(f"Deleted schemas ({len(_schema_stats.deleted)}):", red=True)
-        for schema in _schema_stats.deleted:
-            terminalreporter.write_line(f"  - {schema}", red=True)
-    
-    if _schema_stats.unused and not update_mode:
-        terminalreporter.write_line(f"Unused schemas ({len(_schema_stats.unused)}):")
-        for schema in _schema_stats.unused:
-            terminalreporter.write_line(f"  - {schema}")
-        terminalreporter.write_line("Use --schema-update to delete unused schemas", yellow=True)
-
-
-def cleanup_unused_schemas(manager: SchemaShot, update_mode: bool, stats: Optional[SchemaStats] = None) -> None:
-    """
-    Удаляет неиспользованные схемы в режиме обновления и собирает статистику.
-    
-    Args:
-        manager: Экземпляр SchemaShot
-        update_mode: Режим обновления
-        stats: Опциональный объект для сбора статистики
-    """
-    # Если директория снимков не существует, ничего не делаем
-    if not manager.snapshot_dir.exists():
-        return
-    
-    # Перебираем все файлы схем
-    all_schemas = list(manager.snapshot_dir.glob("*.schema.json"))
-    
-    for schema_file in all_schemas:
-        if schema_file.name not in manager.used_schemas:
-            if update_mode:
-                try:
-                    schema_file.unlink()
-                    if stats:
-                        stats.add_deleted(schema_file.name)
-                except OSError as e:
-                    # Логируем ошибки удаления, но не прерываем работу
-                    manager.logger.warning(f"Failed to delete unused schema {schema_file.name}: {e}")
-                except Exception as e:
-                    # Неожиданные ошибки тоже логируем
-                    manager.logger.error(f"Unexpected error deleting schema {schema_file.name}: {e}")
-            else:
-                if stats:
-                    stats.add_unused(schema_file.name)
+    print_schema_summary(terminalreporter, _schema_stats, update_mode)
