@@ -85,10 +85,12 @@ class SchemaShot:
         
         if not schema_path.exists():
             if not self.update_mode:
-                raise pytest.fail.Exception(f"Schema `{name}` not found. Run the test with the --schema-update option to create it.")
-            
+                raise pytest.fail.Exception(
+                    f"Schema `{name}` not found. Run the test with the --schema-update option to create it."
+                )
+
             self._save_schema(current_schema, schema_path)
-            pytest.skip(f"New schema `{name}` has been created.")
+            self.logger.info(f"New schema `{name}` has been created.")
             return None
             
         # Загружаем существующую схему
