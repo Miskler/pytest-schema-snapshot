@@ -1,12 +1,10 @@
 """
 Модуль для отслеживания изменений схем и управления неиспользуемыми схемами.
 """
-from pathlib import Path
 from typing import Any, Optional
-import pytest
+
 from .core import SchemaShot
 from .schema_builder import EnhancedSchemaBuilder
-from .compare_schemas import SchemaComparator
 from .stats import SchemaStats
 
 
@@ -27,39 +25,32 @@ class TrackedSchemaShot(SchemaShot):
         __tracebackhide__ = True  # Прячем эту функцию из стека вызовов pytest
 
         schema_path = self._get_schema_path(name)
-        schema_exists = schema_path.exists()
+        schema_exists_before = schema_path.exists()
         
         # Загружаем старую схему если она существует
         old_schema = None
-        if schema_exists:
+        if schema_exists_before:
             old_schema = self._load_schema(schema_path)
         
         # Вызываем оригинальный метод
-        try:
-            result = super().assert_match(data, name)
-            
-            # Если тест прошел успешно и мы НЕ в режиме обновления,
-            # проверяем есть ли незафиксированные изменения
-            if not self.update_mode and schema_exists and old_schema:
-                # Генерируем схему из текущих данных
-                builder = EnhancedSchemaBuilder()
-                builder.add_object(data)
-                current_schema = builder.to_schema()
-                
-                # Сравниваем с существующей схемой
-                self._schema_stats.add_uncommitted(schema_path.name, old_schema, current_schema)
-            
-        except pytest.skip.Exception:
-            # Новая схема была создана (pytest.skip вызван в core.py)
-            if self.update_mode and not schema_exists and schema_path.exists():
+        result = super().assert_match(data, name)
+
+        schema_exists_after = schema_path.exists()
+
+        # Если тест прошел успешно и мы НЕ в режиме обновления,
+        # проверяем есть ли незафиксированные изменения
+        if not self.update_mode and schema_exists_after and old_schema is not None:
+            builder = EnhancedSchemaBuilder()
+            builder.add_object(data)
+            current_schema = builder.to_schema()
+            self._schema_stats.add_uncommitted(schema_path.name, old_schema, current_schema)
+
+        if self.update_mode:
+            if not schema_exists_before and schema_exists_after:
                 self._schema_stats.add_created(schema_path.name)
-            raise  # Пробрасываем skip дальше
-        
-        # Отслеживаем события для существующих схем в режиме обновления
-        if self.update_mode and schema_exists:
-            # Загружаем новую схему для сравнения (схема могла быть обновлена)
-            new_schema = self._load_schema(schema_path)
-            self._schema_stats.add_updated(schema_path.name, old_schema, new_schema)
+            if schema_exists_before:
+                new_schema = self._load_schema(schema_path)
+                self._schema_stats.add_updated(schema_path.name, old_schema, new_schema)
         
         return result
 
