@@ -3,8 +3,7 @@ from pathlib import Path
 from typing import Any, Dict, Set, Optional
 import pytest
 from jsonschema import validate, ValidationError, FormatChecker
-from .compare_schemas import SchemaComparator
-from .tools import JsonToSchemaConverter, NameValidator
+from .tools import JsonToSchemaConverter, NameValidator, JsonSchemaDiff
 import logging
 
 
@@ -93,7 +92,7 @@ class SchemaShot:
         # Проверяем, нужно ли обновить схему
         schema_updated = False
         if existing_schema != current_schema:
-            differences = self._compare_schemas(existing_schema, current_schema)
+            differences = JsonSchemaDiff.diff(existing_schema, current_schema)
             
             if self.update_mode:
                 self._save_schema(current_schema, schema_path)
@@ -110,11 +109,7 @@ class SchemaShot:
             try:
                 validate(instance=data, schema=existing_schema, format_checker=FormatChecker())
             except ValidationError as e:
-                differences = self._compare_schemas(existing_schema, current_schema)
+                differences = JsonSchemaDiff.diff(existing_schema, current_schema)
                 pytest.fail(f"\n\n{differences}\n\nValidation error in `{name}`: {e.message}")
         
         return schema_updated
-
-    def _compare_schemas(self, old_schema: Dict[str, Any], new_schema: Dict[str, Any]) -> str:
-        """Сравнивает две схемы и возвращает описание различий."""
-        return SchemaComparator(old_schema, new_schema).compare()

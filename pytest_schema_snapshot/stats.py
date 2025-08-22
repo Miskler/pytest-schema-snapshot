@@ -2,7 +2,7 @@
 Модуль для сбора и отображения статистики по схемам.
 """
 from typing import Dict, List, Any, Optional
-from .compare_schemas import SchemaComparator
+from .tools import JsonSchemaDiff
 
 
 class SchemaStats:
@@ -22,8 +22,7 @@ class SchemaStats:
     def add_updated(self, schema_name: str, old_schema: Optional[Dict[str, Any]] = None, new_schema: Optional[Dict[str, Any]] = None) -> None:
         # Генерируем diff если предоставлены обе схемы
         if old_schema and new_schema:
-            comparator = SchemaComparator(old_schema, new_schema)
-            diff = comparator.compare()
+            diff = JsonSchemaDiff.diff(old_schema, new_schema)
             # Добавляем в updated только если есть реальные изменения
             if diff and diff.strip():
                 self.updated.append(schema_name)
@@ -34,8 +33,7 @@ class SchemaStats:
     
     def add_uncommitted(self, schema_name: str, old_schema: Dict[str, Any], new_schema: Dict[str, Any]) -> None:
         """Добавляет схему с незафиксированными изменениями"""
-        comparator = SchemaComparator(old_schema, new_schema)
-        diff = comparator.compare()
+        diff = JsonSchemaDiff.diff(old_schema, new_schema)
         # Добавляем только если есть реальные изменения
         if diff and diff.strip():
             self.uncommitted.append(schema_name)
