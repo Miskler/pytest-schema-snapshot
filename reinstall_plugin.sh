@@ -34,9 +34,9 @@ echo -e "${BLUE}📦 Устанавливаю плагин в режиме ра�
 pip install -e .
 
 echo -e "${BLUE}🔍 Проверяю установку плагина...${NC}"
-if pip list | grep -q pytest-typed-schema-shot; then
+if pip list | grep -q pytest-schema-snapshot; then
     echo -e "${GREEN}✅ Плагин успешно установлен!${NC}"
-    pip show pytest-typed-schema-shot
+    pip show pytest-schema-snapshot
 else
     echo -e "${RED}❌ Ошибка: плагин не найден после установки${NC}"
     exit 1

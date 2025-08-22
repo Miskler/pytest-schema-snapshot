@@ -15,7 +15,7 @@ def test_invalid_email_format_validation(schemashot):
 
 def test_invalid_email_should_fail():
     """Тест, который проверяет, что неправильный email формат провалит валидацию"""
-    from typed_schema_shot.core import SchemaShot
+    from pytest_schema_snapshot.core import SchemaShot
     from pathlib import Path
     import pytest
     
