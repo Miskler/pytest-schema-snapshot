@@ -3,7 +3,7 @@ import pytest
 import logging
 from typing import Generator, Dict, Optional, Set, List, Any, Union, Tuple
 from .core import SchemaShot
-from .stats import SchemaStats, print_schema_summary
+from .stats import SchemaStats, GLOBAL_STATS
 from .tracking import TrackedSchemaShot, cleanup_unused_schemas
 
 # Глобальное хранилище экземпляров SchemaShot для различных директорий
@@ -29,7 +29,7 @@ def schemashot(request: pytest.FixtureRequest) -> Generator[SchemaShot, None, No
     """
     Фикстура, предоставляющая экземпляр SchemaShot и собирающая использованные схемы.
     """
-    global _schema_managers, _schema_stats
+    global _schema_managers, GLOBAL_STATS
     
     # Получаем путь к тестовому файлу
     test_path = Path(request.node.path if hasattr(request.node, 'path') else request.node.fspath)
@@ -44,15 +44,12 @@ def schemashot(request: pytest.FixtureRequest) -> Generator[SchemaShot, None, No
         _schema_managers[root_dir] = SchemaShot(root_dir, update_mode, schema_dir_name)
     
     # Создаем локальный экземпляр для теста
-    shot = TrackedSchemaShot(_schema_managers[root_dir], _schema_stats)
+    shot = TrackedSchemaShot(_schema_managers[root_dir])
     yield shot
     
     # Обновляем глобальный экземпляр использованными схемами из этого теста
     if root_dir in _schema_managers:
         _schema_managers[root_dir].used_schemas.update(shot.used_schemas)
-
-# Глобальная статистика
-_schema_stats = SchemaStats()
 
 
 @pytest.hookimpl(trylast=True)
@@ -61,12 +58,12 @@ def pytest_unconfigure(config: pytest.Config) -> None:
     Хук, который отрабатывает после завершения всех тестов.
     Очищает глобальные переменные.
     """
-    global _schema_managers, _schema_stats
+    global _schema_managers, GLOBAL_STATS
     
     # Очищаем словарь
     _schema_managers.clear()
     # Сбрасываем статистику для следующего запуска
-    _schema_stats = SchemaStats()
+    GLOBAL_STATS = SchemaStats()
 
 
 @pytest.hookimpl(trylast=True)
@@ -74,16 +71,16 @@ def pytest_terminal_summary(terminalreporter, exitstatus: int) -> None:
     """
     Добавляет сводку о схемах в финальный отчет pytest в терминале.
     """
-    global _schema_stats, _schema_managers
+    global GLOBAL_STATS, _schema_managers
     
     # Выполняем cleanup перед показом summary
     if _schema_managers:
         update_mode = bool(terminalreporter.config.getoption("--schema-update"))
         
         # Вызываем метод очистки неиспользованных схем для каждого экземпляра
-        for root_dir, manager in _schema_managers.items():
-            cleanup_unused_schemas(manager, update_mode, _schema_stats)
+        for _root_dir, manager in _schema_managers.items():
+            cleanup_unused_schemas(manager, update_mode, GLOBAL_STATS)
     
     # Используем новую функцию для вывода статистики
     update_mode = bool(terminalreporter.config.getoption("--schema-update"))
-    print_schema_summary(terminalreporter, _schema_stats, update_mode)
+    GLOBAL_STATS.print_summary(terminalreporter, update_mode)

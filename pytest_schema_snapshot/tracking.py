@@ -5,20 +5,19 @@ from typing import Any, Optional
 
 from .core import SchemaShot
 from .tools import JsonToSchemaConverter
-from .stats import SchemaStats
+from .stats import SchemaStats, GLOBAL_STATS
 
 
 class TrackedSchemaShot(SchemaShot):
     """Расширение SchemaShot с отслеживанием событий для статистики"""
     
-    def __init__(self, parent: SchemaShot, schema_stats: SchemaStats):
+    def __init__(self, parent: SchemaShot):
         # Копируем атрибуты из родительского экземпляра
         self.root_dir = parent.root_dir
         self.update_mode = parent.update_mode
         self.snapshot_dir = parent.snapshot_dir
         self.used_schemas = parent.used_schemas
         self.logger = parent.logger
-        self._schema_stats = schema_stats
     
     def assert_match(self, data: Any, name: str) -> Optional[bool]:
         """Обертка для отслеживания создания/обновления схем"""
@@ -43,14 +42,14 @@ class TrackedSchemaShot(SchemaShot):
             builder = JsonToSchemaConverter()
             builder.add_object(data)
             current_schema = builder.to_schema()
-            self._schema_stats.add_uncommitted(schema_path.name, old_schema, current_schema)
+            GLOBAL_STATS.add_uncommitted(schema_path.name, old_schema, current_schema)
 
         if self.update_mode:
             if not schema_exists_before and schema_exists_after:
-                self._schema_stats.add_created(schema_path.name)
+                GLOBAL_STATS.add_created(schema_path.name)
             if schema_exists_before:
                 new_schema = self._load_schema(schema_path)
-                self._schema_stats.add_updated(schema_path.name, old_schema, new_schema)
+                GLOBAL_STATS.add_updated(schema_path.name, old_schema, new_schema)
         
         return result
 
