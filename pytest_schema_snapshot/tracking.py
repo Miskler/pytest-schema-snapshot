@@ -4,7 +4,7 @@
 from typing import Any, Optional
 
 from .core import SchemaShot
-from .schema_builder import EnhancedSchemaBuilder
+from .tools import JsonToSchemaConverter
 from .stats import SchemaStats
 
 
@@ -40,7 +40,7 @@ class TrackedSchemaShot(SchemaShot):
         # Если тест прошел успешно и мы НЕ в режиме обновления,
         # проверяем есть ли незафиксированные изменения
         if not self.update_mode and schema_exists_after and old_schema is not None:
-            builder = EnhancedSchemaBuilder()
+            builder = JsonToSchemaConverter()
             builder.add_object(data)
             current_schema = builder.to_schema()
             self._schema_stats.add_uncommitted(schema_path.name, old_schema, current_schema)

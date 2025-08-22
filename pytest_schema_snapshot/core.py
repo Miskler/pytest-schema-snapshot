@@ -4,7 +4,7 @@ from typing import Any, Dict, Set, Optional
 import pytest
 from jsonschema import validate, ValidationError, FormatChecker
 from .compare_schemas import SchemaComparator
-from .schema_builder import EnhancedSchemaBuilder
+from .tools import JsonToSchemaConverter, NameValidator
 import logging
 
 
@@ -65,21 +65,15 @@ class SchemaShot:
             ValueError: Если name содержит недопустимые символы
         """
         __tracebackhide__ = True  # Прячем эту функцию из стека вызовов pytest
-        
-        # Валидация имени схемы
-        if not name or not isinstance(name, str):
-            raise ValueError("Schema name must be a non-empty string")
-        
+
         # Проверяем на недопустимые символы для имени файла
-        invalid_chars = '<>:"/\\|?*'
-        if any(char in name for char in invalid_chars):
-            raise ValueError(f"Schema name contains invalid characters: {invalid_chars}")
+        NameValidator.check_valid(name)
         
         schema_path = self._get_schema_path(name)
         self.used_schemas.add(schema_path.name)
         
         # Генерируем текущую схему
-        builder = EnhancedSchemaBuilder()
+        builder = JsonToSchemaConverter()
         builder.add_object(data)
         current_schema = builder.to_schema()
         
