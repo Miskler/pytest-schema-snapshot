@@ -29,7 +29,7 @@ def pytest_addoption(parser: pytest.Parser) -> None:
     )
     parser.addini(
         "jsss_callable_regex",
-        default="{module}.{class_method=.}",
+        default="{class_method=.}",
         help="Регулярное выражение для сохранения callable части пути",
     )
 

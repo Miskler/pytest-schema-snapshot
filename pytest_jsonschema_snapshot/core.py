@@ -14,7 +14,7 @@ class SchemaShot:
     def __init__(
         self,
         root_dir: Path,
-        callable_regex: str = "{module}.{class_method=.}",
+        callable_regex: str = "{class_method=.}",
         update_mode: bool = False,
         debug_mode: bool = False,
         snapshot_dir_name: str = "__snapshots__",
