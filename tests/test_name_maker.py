@@ -6,8 +6,8 @@ import pytest
 # импортируем тестируемую функцию из вашего модуля
 from pytest_jsonschema_snapshot.tools import NameMaker
 
-
 # ------------------------------ тестовые объекты ------------------------------
+
 
 def free_func():
     pass
@@ -34,6 +34,7 @@ class K:
 def decorator_no_wraps(fn):
     def wrapper(*a, **kw):
         return fn(*a, **kw)
+
     return wrapper
 
 
@@ -41,6 +42,7 @@ def decorator_with_wraps(fn):
     @wraps(fn)
     def wrapper(*a, **kw):
         return fn(*a, **kw)
+
     return wrapper
 
 
@@ -57,10 +59,12 @@ def decorated_wrapped():
 def make_inner():
     def inner():
         pass
+
     return inner
 
 
 # ------------------------------ вспомогалки ------------------------------
+
 
 def _split_module(mod_full: str):
     """Разбить имя модуля на (package, path_str) для ожиданий в ассертах."""
@@ -87,6 +91,7 @@ def _expected_prefix_for_module(obj, use_path_dot: bool = True) -> str:
 
 
 # ------------------------------ тесты поведения плейсхолдеров ------------------------------
+
 
 def test_free_function_class_method_joiner_slash():
     rule = "{package}/{path=.}/{class_method=/}"

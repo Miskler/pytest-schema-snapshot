@@ -55,7 +55,9 @@ def schemashot(request: pytest.FixtureRequest) -> Generator[SchemaShot, None, No
 
     # Создаем или получаем экземпляр SchemaShot для этой директории
     if root_dir not in _schema_managers:
-        _schema_managers[root_dir] = SchemaShot(root_dir, callable_regex, update_mode, debug_mode, schema_dir_name)
+        _schema_managers[root_dir] = SchemaShot(
+            root_dir, callable_regex, update_mode, debug_mode, schema_dir_name
+        )
 
     # Создаем локальный экземпляр для теста
     yield _schema_managers[root_dir]

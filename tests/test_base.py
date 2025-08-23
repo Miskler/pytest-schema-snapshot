@@ -39,4 +39,4 @@ async def test_something(schemashot):
         ],
         "разнотипный_массив": [None, "строка", {"ключ": "значение"}],
     }
-    schemashot.assert_match(data, "some_schema")
+    schemashot.assert_json_match(data, "some_schema")

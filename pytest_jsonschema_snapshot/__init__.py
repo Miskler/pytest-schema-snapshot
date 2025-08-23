@@ -10,6 +10,3 @@ from .core import SchemaShot
 
 __version__ = "0.1.9"
 __all__ = ["SchemaShot"]
-
-# Публичное API
-assert_match = SchemaShot.assert_match

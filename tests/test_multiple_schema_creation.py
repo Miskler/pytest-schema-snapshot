@@ -17,9 +17,9 @@ def test_multiple_schema_creation(schemashot, pytestconfig):
         if path.exists():
             path.unlink()
 
-    schemashot.assert_match({"value": 1}, names[0])
-    schemashot.assert_match({"value": 2}, names[1])
-    schemashot.assert_match({"value": 3}, names[2])
+    schemashot.assert_json_match({"value": 1}, names[0])
+    schemashot.assert_json_match({"value": 2}, names[1])
+    schemashot.assert_json_match({"value": 3}, names[2])
 
     # Verify all schemas were created
     for name in names:

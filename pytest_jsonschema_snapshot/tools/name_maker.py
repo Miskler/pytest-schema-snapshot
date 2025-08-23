@@ -19,7 +19,11 @@ class NameMaker:
             return ""
         cand = qn.rsplit(".", 1)[0]
         mod = inspect.getmodule(obj)
-        return cand if mod and hasattr(mod, cand) and inspect.isclass(getattr(mod, cand)) else ""
+        return (
+            cand
+            if mod and hasattr(mod, cand) and inspect.isclass(getattr(mod, cand))
+            else ""
+        )
 
     @staticmethod
     def _meta(obj: Any) -> Dict[str, Any]:
@@ -35,7 +39,11 @@ class NameMaker:
             method_name = obj.__name__
             owner = obj.__self__
             if owner is not None:
-                cls_name = owner.__name__ if inspect.isclass(owner) else owner.__class__.__name__
+                cls_name = (
+                    owner.__name__
+                    if inspect.isclass(owner)
+                    else owner.__class__.__name__
+                )
             else:
                 cls_name = NameMaker._owner_from_qualname(obj)
             module_name = obj.__func__.__module__
@@ -75,7 +83,7 @@ class NameMaker:
             "package_full": module_name,
             "module": module_leaf,
             "module_parts": module_parts,  # для {package_full=SEP}
-            "path_parts": path_parts,      # для {path=SEP}
+            "path_parts": path_parts,  # для {path=SEP}
             "class": cls_name,
             "method": method_name,
             "class_method": f"{cls_name}.{method_name}" if cls_name else method_name,

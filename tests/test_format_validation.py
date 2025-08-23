@@ -9,7 +9,7 @@ def test_invalid_email_format_validation(schemashot):
     """Тест, который должен провалиться при неправильном email формате"""
     # Создаем правильную схему с email форматом
     valid_data = {"user_email": "test@example.com"}  # Это создаст format: "email"
-    schemashot.assert_match(valid_data, "strict_email_validation_test")
+    schemashot.assert_json_match(valid_data, "strict_email_validation_test")
 
 
 def test_invalid_email_should_fail():
@@ -29,7 +29,7 @@ def test_invalid_email_should_fail():
 
     # Это должно провалиться из-за неправильного формата email
     with pytest.raises(pytest.fail.Exception) as exc_info:
-        shot.assert_match(invalid_data, "strict_email_validation_test")
+        shot.assert_json_match(invalid_data, "strict_email_validation_test")
 
     # Проверяем, что ошибка связана с форматом email
     error_message = str(exc_info.value)

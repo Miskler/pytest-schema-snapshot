@@ -1,13 +1,14 @@
 import json
 import logging
 from pathlib import Path
-from typing import Any, Optional, Set, Callable, Iterable
+from typing import Any, Callable, Iterable, Optional, Set
 
 import pytest
 from jsonschema import FormatChecker, ValidationError, validate
 
 from .stats import GLOBAL_STATS
-from .tools import JsonSchemaDiff, JsonToSchemaConverter, NameValidator, NameMaker
+from .tools import (JsonSchemaDiff, JsonToSchemaConverter, NameMaker,
+                    NameValidator)
 
 
 class SchemaShot:
@@ -46,10 +47,52 @@ class SchemaShot:
         if not self.snapshot_dir.exists():
             self.snapshot_dir.mkdir(parents=True)
 
-    def assert_match(self,
-                     data: Any,
-                     name: str | Callable | Iterable[str | Callable],
-                     ) -> Optional[bool]:
+    def _process_name(self, name: str | Callable | Iterable[str | Callable]) -> str:
+        __tracebackhide__ = not self.debug_mode  # прячем из стека pytest
+
+        def process_name_part(part: str | Callable) -> str:
+            if callable(part):
+                return NameMaker.format_callable(part, self.callable_regex)
+            else:
+                return part
+
+        if isinstance(name, (list, tuple)):
+            name = ".".join([process_name_part(part) for part in name])
+        else:
+            name = process_name_part(name)
+
+        NameValidator.check_valid(name)
+
+        return name
+
+    def assert_json_match(
+        self,
+        data: dict,
+        name: str | Callable | Iterable[str | Callable],
+    ) -> Optional[bool]:
+        real_name = self._process_name(name)
+
+        builder = JsonToSchemaConverter()
+        builder.add_object(data)
+        current_schema = builder.to_schema()
+
+        return self._base_match(data, current_schema, real_name)
+
+    def assert_schema_match(
+        self,
+        schema: dict,
+        name: str | Callable | Iterable[str | Callable],
+    ) -> Optional[bool]:
+        real_name = self._process_name(name)
+
+        return self._base_match(None, schema, real_name)
+
+    def _base_match(
+        self,
+        data: Optional[dict],
+        current_schema: dict,
+        name: str,
+    ) -> Optional[bool]:
         """
         Проверяет соответствие данных json-схеме, при необходимости создаёт/обновляет её
         и пишет статистику в GLOBAL_STATS.
@@ -64,18 +107,7 @@ class SchemaShot:
         global GLOBAL_STATS
 
         # Проверка имени
-        def process_name_part(part: str | Callable) -> str:
-            if callable(part):
-                return NameMaker.format_callable(part, self.callable_regex)
-            else:
-                return part
-
-        if isinstance(name, (list, tuple)):
-            name = ".".join([process_name_part(part) for part in name])
-        else:
-            name = process_name_part(name)
-
-        NameValidator.check_valid(name)
+        name = self._process_name(name)
 
         schema_path = self.snapshot_dir / f"{name}.schema.json"
         self.used_schemas.add(schema_path.name)
@@ -87,11 +119,6 @@ class SchemaShot:
         if schema_exists_before:
             with open(schema_path, "r", encoding="utf-8") as f:
                 old_schema = json.load(f)
-        
-        # --- строим схему по текущим данным ---------------------------------------
-        builder = JsonToSchemaConverter()
-        builder.add_object(data)
-        current_schema = builder.to_schema()
 
         # --- когда схемы ещё нет ---------------------------------------------------
         if not schema_exists_before:
@@ -123,7 +150,7 @@ class SchemaShot:
                     schema_path.name, old_schema, current_schema
                 )
                 schema_updated = True
-            else:
+            elif data is not None:
                 # только валидируем по старой схеме
                 try:
                     validate(
@@ -135,7 +162,7 @@ class SchemaShot:
                     pytest.fail(
                         f"\n\n{differences}\n\nValidation error in `{name}`: {e.message}"
                     )
-        else:
+        elif data is not None:
             # схемы совпали – всё равно валидируем на случай формальных ошибок
             try:
                 validate(
