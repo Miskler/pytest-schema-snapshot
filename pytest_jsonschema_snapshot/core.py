@@ -15,6 +15,7 @@ class SchemaShot:
         self,
         root_dir: Path,
         update_mode: bool = False,
+        debug_mode: bool = False,
         snapshot_dir_name: str = "__snapshots__",
     ):
         """
@@ -27,6 +28,7 @@ class SchemaShot:
         """
         self.root_dir = root_dir
         self.update_mode = update_mode
+        self.debug_mode = debug_mode
         self.snapshot_dir = root_dir / snapshot_dir_name
         self.used_schemas: Set[str] = set()
 
@@ -52,7 +54,7 @@ class SchemaShot:
             False – схема не изменилась,
             None  – создана новая схема.
         """
-        __tracebackhide__ = True  # прячем из стека pytest
+        __tracebackhide__ = not self.debug_mode  # прячем из стека pytest
 
         global GLOBAL_STATS
 
@@ -67,7 +69,7 @@ class SchemaShot:
 
         old_schema = None
         if schema_exists_before:
-            with open(path, "r", encoding="utf-8") as f:
+            with open(schema_path, "r", encoding="utf-8") as f:
                 old_schema = json.load(f)
         
         # --- строим схему по текущим данным ---------------------------------------

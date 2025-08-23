@@ -17,6 +17,11 @@ def pytest_addoption(parser: pytest.Parser) -> None:
         action="store_true",
         help="Обновить или создать JSON Schema файлы на основе текущих данных",
     )
+    parser.addoption(
+        "--pss-debug",
+        action="store_true",
+        help="Выводит внутренний стек ошибок (перестает их прятать)",
+    )
     parser.addini(
         "schema_shot_dir",
         default="__snapshots__",
@@ -37,13 +42,14 @@ def schemashot(request: pytest.FixtureRequest) -> Generator[SchemaShot, None, No
     )
     root_dir = test_path.parent
     update_mode = bool(request.config.getoption("--schema-update"))
+    debug_mode = bool(request.config.getoption("--pss-debug"))
 
     # Получаем настраиваемую директорию для схем
     schema_dir_name = str(request.config.getini("schema_shot_dir") or "__snapshots__")
 
     # Создаем или получаем экземпляр SchemaShot для этой директории
     if root_dir not in _schema_managers:
-        _schema_managers[root_dir] = SchemaShot(root_dir, update_mode, schema_dir_name)
+        _schema_managers[root_dir] = SchemaShot(root_dir, update_mode, debug_mode, schema_dir_name)
 
     # Создаем локальный экземпляр для теста
     yield _schema_managers[root_dir]
