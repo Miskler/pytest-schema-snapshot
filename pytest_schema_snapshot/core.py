@@ -4,6 +4,7 @@ from typing import Any, Dict, Set, Optional
 import pytest
 from jsonschema import validate, ValidationError, FormatChecker
 from .tools import JsonToSchemaConverter, NameValidator, JsonSchemaDiff
+from .stats import GLOBAL_STATS
 import logging
 
 
@@ -50,33 +51,35 @@ class SchemaShot:
 
     def assert_match(self, data: Any, name: str) -> Optional[bool]:
         """
-        Проверяет соответствие данных схеме.
-        
-        Args:
-            data: Данные для проверки
-            name: Имя схемы
-            
-        Returns:
-            True, если схема была обновлена, False, если не было обновления,
-            None, если была создана новая схема
-            
-        Raises:
-            ValueError: Если name содержит недопустимые символы
-        """
-        __tracebackhide__ = True  # Прячем эту функцию из стека вызовов pytest
+        Проверяет соответствие данных json-схеме, при необходимости создаёт/обновляет её
+        и пишет статистику в GLOBAL_STATS.
 
-        # Проверяем на недопустимые символы для имени файла
+        Возвращает:
+            True  – схема обновлена,
+            False – схема не изменилась,
+            None  – создана новая схема.
+        """
+        __tracebackhide__ = True  # прячем из стека pytest
+
+        global GLOBAL_STATS
+
+        # Проверка имени
         NameValidator.check_valid(name)
         
         schema_path = self._get_schema_path(name)
         self.used_schemas.add(schema_path.name)
-        
-        # Генерируем текущую схему
+
+        # --- состояние ДО проверки ------------------------------------------------
+        schema_exists_before = schema_path.exists()
+        old_schema = self._load_schema(schema_path) if schema_exists_before else None
+
+        # --- строим схему по текущим данным ---------------------------------------
         builder = JsonToSchemaConverter()
         builder.add_object(data)
         current_schema = builder.to_schema()
-        
-        if not schema_path.exists():
+
+        # --- когда схемы ещё нет ---------------------------------------------------
+        if not schema_exists_before:
             if not self.update_mode:
                 raise pytest.fail.Exception(
                     f"Schema `{name}` not found. Run the test with the --schema-update option to create it."
@@ -84,32 +87,45 @@ class SchemaShot:
 
             self._save_schema(current_schema, schema_path)
             self.logger.info(f"New schema `{name}` has been created.")
+            GLOBAL_STATS.add_created(schema_path.name)          # статистика «создана»
             return None
-            
-        # Загружаем существующую схему
-        existing_schema = self._load_schema(schema_path)
-        
-        # Проверяем, нужно ли обновить схему
+
+        # --- схема уже была: сравнение и валидация --------------------------------
+        existing_schema = old_schema
         schema_updated = False
-        if existing_schema != current_schema:
+
+        if existing_schema != current_schema:                   # есть отличия
             differences = JsonSchemaDiff.diff(existing_schema, current_schema)
-            
+
             if self.update_mode:
+                # обновляем файл
                 self._save_schema(current_schema, schema_path)
                 self.logger.warning(f"Schema `{name}` updated.\n\n{differences}")
+                GLOBAL_STATS.add_updated(                       # статистика «обновлена»
+                    schema_path.name, old_schema, current_schema
+                )
                 schema_updated = True
             else:
+                # только валидируем по старой схеме
                 try:
-                    # Проверяем данные по существующей схеме
-                    validate(instance=data, schema=existing_schema, format_checker=FormatChecker())
+                    validate(instance=data, schema=existing_schema,
+                            format_checker=FormatChecker())
                 except ValidationError as e:
                     pytest.fail(f"\n\n{differences}\n\nValidation error in `{name}`: {e.message}")
         else:
-            # Валидация в любом случае
+            # схемы совпали – всё равно валидируем на случай формальных ошибок
             try:
-                validate(instance=data, schema=existing_schema, format_checker=FormatChecker())
+                validate(instance=data, schema=existing_schema,
+                        format_checker=FormatChecker())
             except ValidationError as e:
                 differences = JsonSchemaDiff.diff(existing_schema, current_schema)
                 pytest.fail(f"\n\n{differences}\n\nValidation error in `{name}`: {e.message}")
-        
+
+        # --- статистика «незафиксированные изменения» -----------------------------
+        if not self.update_mode:
+            # пересохранять не стали, но отличия, возможно, есть
+            GLOBAL_STATS.add_uncommitted(schema_path.name, existing_schema, current_schema)
+
         return schema_updated
+
+

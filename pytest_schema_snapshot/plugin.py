@@ -4,7 +4,6 @@ import logging
 from typing import Generator, Dict, Optional, Set, List, Any, Union, Tuple
 from .core import SchemaShot
 from .stats import SchemaStats, GLOBAL_STATS
-from .tracking import TrackedSchemaShot, cleanup_unused_schemas
 
 # Глобальное хранилище экземпляров SchemaShot для различных директорий
 _schema_managers: Dict[Path, SchemaShot] = {}
@@ -44,12 +43,11 @@ def schemashot(request: pytest.FixtureRequest) -> Generator[SchemaShot, None, No
         _schema_managers[root_dir] = SchemaShot(root_dir, update_mode, schema_dir_name)
     
     # Создаем локальный экземпляр для теста
-    shot = TrackedSchemaShot(_schema_managers[root_dir])
-    yield shot
+    yield _schema_managers[root_dir]
     
     # Обновляем глобальный экземпляр использованными схемами из этого теста
-    if root_dir in _schema_managers:
-        _schema_managers[root_dir].used_schemas.update(shot.used_schemas)
+    #if root_dir in _schema_managers:
+    #    _schema_managers[root_dir].used_schemas.update(_schema_managers[root_dir].used_schemas)
 
 
 @pytest.hookimpl(trylast=True)
@@ -84,3 +82,38 @@ def pytest_terminal_summary(terminalreporter, exitstatus: int) -> None:
     # Используем новую функцию для вывода статистики
     update_mode = bool(terminalreporter.config.getoption("--schema-update"))
     GLOBAL_STATS.print_summary(terminalreporter, update_mode)
+
+
+def cleanup_unused_schemas(manager: SchemaShot, update_mode: bool, stats: Optional[SchemaStats] = None) -> None:
+    """
+    Удаляет неиспользованные схемы в режиме обновления и собирает статистику.
+    
+    Args:
+        manager: Экземпляр SchemaShot
+        update_mode: Режим обновления
+        stats: Опциональный объект для сбора статистики
+    """
+    # Если директория снимков не существует, ничего не делаем
+    if not manager.snapshot_dir.exists():
+        return
+    
+    # Перебираем все файлы схем
+    all_schemas = list(manager.snapshot_dir.glob("*.schema.json"))
+    
+    for schema_file in all_schemas:
+        if schema_file.name not in manager.used_schemas:
+            if update_mode:
+                try:
+                    schema_file.unlink()
+                    if stats:
+                        stats.add_deleted(schema_file.name)
+                except OSError as e:
+                    # Логируем ошибки удаления, но не прерываем работу
+                    manager.logger.warning(f"Failed to delete unused schema {schema_file.name}: {e}")
+                except Exception as e:
+                    # Неожиданные ошибки тоже логируем
+                    manager.logger.error(f"Unexpected error deleting schema {schema_file.name}: {e}")
+            else:
+                if stats:
+                    stats.add_unused(schema_file.name)
+
