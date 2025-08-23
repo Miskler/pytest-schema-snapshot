@@ -1,7 +1,7 @@
 import json
 import logging
 from pathlib import Path
-from typing import Any, Dict, Optional, Set
+from typing import Any, Optional, Set
 
 import pytest
 from jsonschema import FormatChecker, ValidationError, validate
@@ -42,20 +42,6 @@ class SchemaShot:
         if not self.snapshot_dir.exists():
             self.snapshot_dir.mkdir(parents=True)
 
-    def _get_schema_path(self, name: str) -> Path:
-        """Получает путь к файлу схемы."""
-        return self.snapshot_dir / f"{name}.schema.json"
-
-    def _save_schema(self, schema: Dict[str, Any], path: Path) -> None:
-        """Сохраняет схему в файл."""
-        with open(path, "w", encoding="utf-8") as f:
-            json.dump(schema, f, indent=2, ensure_ascii=False)
-
-    def _load_schema(self, path: Path) -> Dict[str, Any]:
-        """Загружает схему из файла."""
-        with open(path, "r", encoding="utf-8") as f:
-            return json.load(f)
-
     def assert_match(self, data: Any, name: str) -> Optional[bool]:
         """
         Проверяет соответствие данных json-схеме, при необходимости создаёт/обновляет её
@@ -73,13 +59,17 @@ class SchemaShot:
         # Проверка имени
         NameValidator.check_valid(name)
 
-        schema_path = self._get_schema_path(name)
+        schema_path = self.snapshot_dir / f"{name}.schema.json"
         self.used_schemas.add(schema_path.name)
 
         # --- состояние ДО проверки ------------------------------------------------
         schema_exists_before = schema_path.exists()
-        old_schema = self._load_schema(schema_path) if schema_exists_before else None
 
+        old_schema = None
+        if schema_exists_before:
+            with open(path, "r", encoding="utf-8") as f:
+                old_schema = json.load(f)
+        
         # --- строим схему по текущим данным ---------------------------------------
         builder = JsonToSchemaConverter()
         builder.add_object(data)
@@ -92,7 +82,9 @@ class SchemaShot:
                     f"Schema `{name}` not found. Run the test with the --schema-update option to create it."
                 )
 
-            self._save_schema(current_schema, schema_path)
+            with open(schema_path, "w", encoding="utf-8") as f:
+                json.dump(current_schema, f, indent=2, ensure_ascii=False)
+
             self.logger.info(f"New schema `{name}` has been created.")
             GLOBAL_STATS.add_created(schema_path.name)  # статистика «создана»
             return None
@@ -106,7 +98,8 @@ class SchemaShot:
 
             if self.update_mode:
                 # обновляем файл
-                self._save_schema(current_schema, schema_path)
+                with open(schema_path, "w", encoding="utf-8") as f:
+                    json.dump(current_schema, f, indent=2, ensure_ascii=False)
                 self.logger.warning(f"Schema `{name}` updated.\n\n{differences}")
                 GLOBAL_STATS.add_updated(  # статистика «обновлена»
                     schema_path.name, old_schema, current_schema

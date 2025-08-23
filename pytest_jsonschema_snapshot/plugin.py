@@ -1,6 +1,5 @@
-import logging
 from pathlib import Path
-from typing import Any, Dict, Generator, List, Optional, Set, Tuple, Union
+from typing import Dict, Generator, Optional
 
 import pytest
 
@@ -48,10 +47,6 @@ def schemashot(request: pytest.FixtureRequest) -> Generator[SchemaShot, None, No
 
     # Создаем локальный экземпляр для теста
     yield _schema_managers[root_dir]
-
-    # Обновляем глобальный экземпляр использованными схемами из этого теста
-    # if root_dir in _schema_managers:
-    #    _schema_managers[root_dir].used_schemas.update(_schema_managers[root_dir].used_schemas)
 
 
 @pytest.hookimpl(trylast=True)
