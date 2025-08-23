@@ -1,19 +1,20 @@
 import json
 import logging
 from pathlib import Path
-from typing import Any, Optional, Set
+from typing import Any, Optional, Set, Callable, Iterable
 
 import pytest
 from jsonschema import FormatChecker, ValidationError, validate
 
 from .stats import GLOBAL_STATS
-from .tools import JsonSchemaDiff, JsonToSchemaConverter, NameValidator
+from .tools import JsonSchemaDiff, JsonToSchemaConverter, NameValidator, NameMaker
 
 
 class SchemaShot:
     def __init__(
         self,
         root_dir: Path,
+        callable_regex: str = "{module}.{class_method=.}",
         update_mode: bool = False,
         debug_mode: bool = False,
         snapshot_dir_name: str = "__snapshots__",
@@ -27,6 +28,7 @@ class SchemaShot:
             snapshot_dir_name: Имя директории для снэпшотов
         """
         self.root_dir = root_dir
+        self.callable_regex = callable_regex
         self.update_mode = update_mode
         self.debug_mode = debug_mode
         self.snapshot_dir = root_dir / snapshot_dir_name
@@ -44,7 +46,10 @@ class SchemaShot:
         if not self.snapshot_dir.exists():
             self.snapshot_dir.mkdir(parents=True)
 
-    def assert_match(self, data: Any, name: str) -> Optional[bool]:
+    def assert_match(self,
+                     data: Any,
+                     name: str | Callable | Iterable[str | Callable],
+                     ) -> Optional[bool]:
         """
         Проверяет соответствие данных json-схеме, при необходимости создаёт/обновляет её
         и пишет статистику в GLOBAL_STATS.
@@ -59,6 +64,17 @@ class SchemaShot:
         global GLOBAL_STATS
 
         # Проверка имени
+        def process_name_part(part: str | Callable) -> str:
+            if callable(part):
+                return NameMaker.format_callable(part, self.callable_regex)
+            else:
+                return part
+
+        if isinstance(name, (list, tuple)):
+            name = ".".join([process_name_part(part) for part in name])
+        else:
+            name = process_name_part(name)
+
         NameValidator.check_valid(name)
 
         schema_path = self.snapshot_dir / f"{name}.schema.json"

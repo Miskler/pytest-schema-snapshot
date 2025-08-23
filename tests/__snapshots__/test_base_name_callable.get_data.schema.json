@@ -1,0 +1,32 @@
+{
+  "$schema": "http://json-schema.org/schema#",
+  "type": "object",
+  "properties": {
+    "обязательная": {
+      "type": "string"
+    },
+    "необязательная": {
+      "type": "null"
+    },
+    "словарь": {
+      "type": "object",
+      "properties": {
+        "ключ": {
+          "type": "string"
+        },
+        "число": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "ключ",
+        "число"
+      ]
+    }
+  },
+  "required": [
+    "необязательная",
+    "обязательная",
+    "словарь"
+  ]
+}

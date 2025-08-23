@@ -23,9 +23,14 @@ def pytest_addoption(parser: pytest.Parser) -> None:
         help="Выводит внутренний стек ошибок (перестает их прятать)",
     )
     parser.addini(
-        "schema_shot_dir",
+        "jsss_dir",
         default="__snapshots__",
         help="Директория для хранения схем (по умолчанию: __snapshots__)",
+    )
+    parser.addini(
+        "jsss_callable_regex",
+        default="{module}.{class_method=.}",
+        help="Регулярное выражение для сохранения callable части пути",
     )
 
 
@@ -45,11 +50,12 @@ def schemashot(request: pytest.FixtureRequest) -> Generator[SchemaShot, None, No
     debug_mode = bool(request.config.getoption("--pss-debug"))
 
     # Получаем настраиваемую директорию для схем
-    schema_dir_name = str(request.config.getini("schema_shot_dir") or "__snapshots__")
+    schema_dir_name = str(request.config.getini("jsss_dir"))
+    callable_regex = str(request.config.getini("jsss_callable_regex"))
 
     # Создаем или получаем экземпляр SchemaShot для этой директории
     if root_dir not in _schema_managers:
-        _schema_managers[root_dir] = SchemaShot(root_dir, update_mode, debug_mode, schema_dir_name)
+        _schema_managers[root_dir] = SchemaShot(root_dir, callable_regex, update_mode, debug_mode, schema_dir_name)
 
     # Создаем локальный экземпляр для теста
     yield _schema_managers[root_dir]
