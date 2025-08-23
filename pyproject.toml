@@ -36,13 +36,13 @@ dependencies = [
 urls = { Homepage = "https://github.com/Open-Inflation/pytest-schema-snapshot" }
 
 [project.entry-points."pytest11"]
-schemashot = "pytest_schema_snapshot.plugin"
+schemashot = "pytest_jsonschema_snapshot.plugin"
 
 [tool.hatch.version]
-path = "pytest_schema_snapshot/__init__.py"
+path = "pytest_jsonschema_snapshot/__init__.py"
 
 [tool.hatch.build.targets.wheel]
-packages = ["pytest_schema_snapshot"]
+packages = ["pytest_jsonschema_snapshot"]
 
 [tool.pytest.ini_options]
 addopts = "-ra -q"
