@@ -3,7 +3,7 @@ requires = ["hatchling>=1.0"]
 build-backend = "hatchling.build"
 
 [project]
-name = "pytest-schema-snapshot"
+name = "pytest-jsonschema-snapshot"
 dynamic = ["version"]
 description = "Pytest plugin for automatic JSON Schema generation and validation from examples"
 readme = "README.md"
@@ -33,7 +33,7 @@ dependencies = [
   "jsonschema",
   "pytest"
 ]
-urls = { Homepage = "https://github.com/Open-Inflation/pytest-schema-snapshot" }
+urls = { Homepage = "https://github.com/Open-Inflation/pytest-jsonschema-snapshot" }
 
 [project.entry-points."pytest11"]
 schemashot = "pytest_jsonschema_snapshot.plugin"
