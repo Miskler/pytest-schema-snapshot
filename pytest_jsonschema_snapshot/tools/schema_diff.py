@@ -3,16 +3,14 @@ from __future__ import annotations
 import hashlib
 import json
 from pathlib import Path
-from typing import Any, Dict, Mapping, Union, TypeAlias
+from typing import Any, Dict, Mapping, TypeAlias, Union
 
-from jsonschema_diff import JsonSchemaDiff as JSD, ConfigMaker
+from jsonschema_diff import ConfigMaker
+from jsonschema_diff import JsonSchemaDiff as JSD
 from jsonschema_diff.color import HighlighterPipeline
-from jsonschema_diff.color.stages import (
-    MonoLinesHighlighter,
-    ReplaceGenericHighlighter,
-    PathHighlighter,
-)
-
+from jsonschema_diff.color.stages import (MonoLinesHighlighter,
+                                          PathHighlighter,
+                                          ReplaceGenericHighlighter)
 
 SchemaLike: TypeAlias = Union[Mapping[str, Any], str, Path]
 
@@ -28,7 +26,9 @@ class JsonSchemaDiff:
 
     # Prevent instantiation
     def __new__(cls, *args, **kwargs):
-        raise TypeError("JsonSchemaDiff is static and cannot be instantiated. Use class methods only.")
+        raise TypeError(
+            "JsonSchemaDiff is static and cannot be instantiated. Use class methods only."
+        )
 
     # Shared, immutable config & color pipeline
     _CONFIG = ConfigMaker.make()
@@ -84,7 +84,9 @@ class JsonSchemaDiff:
         - JSON with sorted keys & compact separators for stable canonical form.
         - ensure_ascii=False to avoid escaping non-ASCII (doesn't affect hash stability).
         """
-        text = json.dumps(obj, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+        text = json.dumps(
+            obj, sort_keys=True, separators=(",", ":"), ensure_ascii=False
+        )
         return text.encode("utf-8")
 
     @classmethod
@@ -131,7 +133,9 @@ class JsonSchemaDiff:
                     raise ValueError("JSON must be an object or array for a schema.")
                 # jsonschema-diff expects dict-like schemas; allow top-level list for arrays
                 return loaded  # type: ignore[return-value]
-            raise FileNotFoundError(f"Schema path does not exist and value is not JSON: {src!r}")
+            raise FileNotFoundError(
+                f"Schema path does not exist and value is not JSON: {src!r}"
+            )
 
         raise TypeError(
             "Unsupported schema source. Use dict-like, Path, path string, or JSON string."
@@ -144,4 +148,3 @@ class JsonSchemaDiff:
         if not isinstance(data, (dict, list)):
             raise ValueError(f"Schema file must contain JSON object or array: {path}")
         return data  # type: ignore[return-value]
-
