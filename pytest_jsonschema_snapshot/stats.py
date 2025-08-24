@@ -22,11 +22,7 @@ class SchemaStats:
     def add_created(self, schema_name: str) -> None:
         self.created.append(schema_name)
 
-    def add_updated(
-        self,
-        schema_name: str,
-        diff: Optional[str] = None
-    ) -> None:
+    def add_updated(self, schema_name: str, diff: Optional[str] = None) -> None:
         # Генерируем diff если предоставлены обе схемы
         if diff and diff.strip():
             self.updated.append(schema_name)
@@ -35,9 +31,7 @@ class SchemaStats:
             # Если схемы не предоставлены, считаем что было обновление
             self.updated.append(schema_name)
 
-    def add_uncommitted(
-        self, schema_name: str, diff: Optional[str] = None
-    ) -> None:
+    def add_uncommitted(self, schema_name: str, diff: Optional[str] = None) -> None:
         """Добавляет схему с незафиксированными изменениями"""
         # Добавляем только если есть реальные изменения
         if diff and diff.strip():

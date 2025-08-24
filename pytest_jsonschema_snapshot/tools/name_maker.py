@@ -132,7 +132,7 @@ class NameMaker:
     @staticmethod
     def _collapse(s: str) -> str:
         # collapse critical duplicates but keep double underscores
-        s = re.sub(r"/{2,}", "/", s)   # '//' → '/'
+        s = re.sub(r"/{2,}", "/", s)  # '//' → '/'
         s = re.sub(r"\.{2,}", ".", s)  # '..' → '.'
-        s = re.sub(r"-{2,}", "-", s)   # '--' → '-'
+        s = re.sub(r"-{2,}", "-", s)  # '--' → '-'
         return s

@@ -1,13 +1,12 @@
 from pathlib import Path
 from typing import Dict, Generator, Optional
 
-from jsonschema_diff import JsonSchemaDiff, ConfigMaker
-from jsonschema_diff.color import HighlighterPipeline
-from jsonschema_diff.color.stages import (
-    MonoLinesHighlighter, ReplaceGenericHighlighter, PathHighlighter
-)
-
 import pytest
+from jsonschema_diff import ConfigMaker, JsonSchemaDiff
+from jsonschema_diff.color import HighlighterPipeline
+from jsonschema_diff.color.stages import (MonoLinesHighlighter,
+                                          PathHighlighter,
+                                          ReplaceGenericHighlighter)
 
 from .core import SchemaShot
 from .stats import GLOBAL_STATS, SchemaStats
@@ -68,11 +67,9 @@ def schemashot(request: pytest.FixtureRequest) -> Generator[SchemaShot, None, No
 
     differ = JsonSchemaDiff(
         ConfigMaker.make(),
-        HighlighterPipeline([
-            MonoLinesHighlighter(),
-            PathHighlighter(),
-            ReplaceGenericHighlighter()
-        ])
+        HighlighterPipeline(
+            [MonoLinesHighlighter(), PathHighlighter(), ReplaceGenericHighlighter()]
+        ),
     )
 
     # Создаем или получаем экземпляр SchemaShot для этой директории

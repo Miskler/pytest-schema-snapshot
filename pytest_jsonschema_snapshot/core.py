@@ -1,7 +1,8 @@
 import json
 import logging
 from pathlib import Path
-from typing import Callable, Iterable, Optional, Set, TYPE_CHECKING
+from typing import TYPE_CHECKING, Callable, Iterable, Optional, Set
+
 import pathvalidate
 
 if TYPE_CHECKING:
@@ -11,9 +12,7 @@ import pytest
 from jsonschema import FormatChecker, ValidationError, validate
 
 from .stats import GLOBAL_STATS
-from .tools import (
-    JsonToSchemaConverter, NameMaker
-)
+from .tools import JsonToSchemaConverter, NameMaker
 
 
 class SchemaShot:
@@ -70,13 +69,14 @@ class SchemaShot:
         else:
             name = process_name_part(name)
 
-
         if not isinstance(name, str) or not name:
             raise ValueError("Schema name must be a non-empty string")
 
         try:
             # auto подберёт правила под текущую ОС
-            pathvalidate.validate_filename(name, platform="auto")  # allow_reserved=False по умолчанию
+            pathvalidate.validate_filename(
+                name, platform="auto"
+            )  # allow_reserved=False по умолчанию
         except ValidationError as e:
             raise ValueError(f"Invalid schema name: {e}") from None
 
@@ -185,9 +185,7 @@ class SchemaShot:
             differences = self.differ.compare(existing_schema, current_schema).render()
 
             if self.update_mode:
-                GLOBAL_STATS.add_updated(
-                    schema_path.name, differences
-                )
+                GLOBAL_STATS.add_updated(schema_path.name, differences)
 
                 # обновляем файл
                 with open(schema_path, "w", encoding="utf-8") as f:
@@ -195,9 +193,7 @@ class SchemaShot:
                 self.logger.warning(f"Schema `{name}` updated.\n\n{differences}")
                 schema_updated = True
             elif data is not None:
-                GLOBAL_STATS.add_uncommitted(
-                    schema_path.name, differences
-                )
+                GLOBAL_STATS.add_uncommitted(schema_path.name, differences)
 
                 # только валидируем по старой схеме
                 try:
