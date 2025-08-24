@@ -2,6 +2,7 @@ import json
 import logging
 from pathlib import Path
 from typing import Callable, Iterable, Optional, Set, TYPE_CHECKING
+import pathvalidate
 
 if TYPE_CHECKING:
     from jsonschema_diff import JsonSchemaDiff
@@ -11,7 +12,7 @@ from jsonschema import FormatChecker, ValidationError, validate
 
 from .stats import GLOBAL_STATS
 from .tools import (
-    JsonToSchemaConverter, NameMaker, NameValidator
+    JsonToSchemaConverter, NameMaker
 )
 
 
@@ -69,7 +70,15 @@ class SchemaShot:
         else:
             name = process_name_part(name)
 
-        NameValidator.check_valid(name)
+
+        if not isinstance(name, str) or not name:
+            raise ValueError("Schema name must be a non-empty string")
+
+        try:
+            # auto подберёт правила под текущую ОС
+            pathvalidate.validate_filename(name, platform="auto")  # allow_reserved=False по умолчанию
+        except ValidationError as e:
+            raise ValueError(f"Invalid schema name: {e}") from None
 
         return name
 
@@ -189,7 +198,7 @@ class SchemaShot:
                 GLOBAL_STATS.add_uncommitted(
                     schema_path.name, differences
                 )
-                
+
                 # только валидируем по старой схеме
                 try:
                     validate(
