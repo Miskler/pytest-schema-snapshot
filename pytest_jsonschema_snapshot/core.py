@@ -1,7 +1,7 @@
 import json
 import logging
 from pathlib import Path
-from typing import Any, Callable, Iterable, Optional, Set, TYPE_CHECKING
+from typing import Callable, Iterable, Optional, Set, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from jsonschema_diff import JsonSchemaDiff
@@ -145,7 +145,7 @@ class SchemaShot:
         schema_path = self.snapshot_dir / f"{name}.schema.json"
         self.used_schemas.add(schema_path.name)
 
-        # --- состояние ДО проверки ------------------------------------------------
+        # --- состояние ДО проверки ---
         schema_exists_before = schema_path.exists()
 
         old_schema = None
@@ -153,11 +153,12 @@ class SchemaShot:
             with open(schema_path, "r", encoding="utf-8") as f:
                 old_schema = json.load(f)
 
-        # --- когда схемы ещё нет ---------------------------------------------------
+        # --- когда схемы ещё нет ---
         if not schema_exists_before:
             if not self.update_mode:
                 raise pytest.fail.Exception(
-                    f"Schema `{name}` not found. Run the test with the --schema-update option to create it."
+                    f"Schema `{name}` not found."
+                    "Run the test with the --schema-update option to create it."
                 )
 
             with open(schema_path, "w", encoding="utf-8") as f:
@@ -175,15 +176,20 @@ class SchemaShot:
             differences = self.differ.compare(existing_schema, current_schema).render()
 
             if self.update_mode:
+                GLOBAL_STATS.add_updated(
+                    schema_path.name, differences
+                )
+
                 # обновляем файл
                 with open(schema_path, "w", encoding="utf-8") as f:
                     json.dump(current_schema, f, indent=2, ensure_ascii=False)
                 self.logger.warning(f"Schema `{name}` updated.\n\n{differences}")
-                GLOBAL_STATS.add_updated(  # статистика «обновлена»
-                    schema_path.name, old_schema, current_schema
-                )
                 schema_updated = True
             elif data is not None:
+                GLOBAL_STATS.add_uncommitted(
+                    schema_path.name, differences
+                )
+                
                 # только валидируем по старой схеме
                 try:
                     validate(
@@ -208,12 +214,5 @@ class SchemaShot:
                 pytest.fail(
                     f"\n\n{differences}\n\nValidation error in `{name}`: {e.message}"
                 )
-
-        # --- статистика «незафиксированные изменения» -----------------------------
-        if not self.update_mode:
-            # пересохранять не стали, но отличия, возможно, есть
-            GLOBAL_STATS.add_uncommitted(
-                schema_path.name, existing_schema, current_schema
-            )
 
         return name, schema_updated

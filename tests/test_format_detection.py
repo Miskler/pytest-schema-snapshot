@@ -2,8 +2,6 @@
 Тесты для обнаружения форматов в JSON Schema.
 """
 
-import pytest
-
 
 def test_email_format_detection(schemashot):
     """Тест обнаружения email формата"""

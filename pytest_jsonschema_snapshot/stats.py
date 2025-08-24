@@ -4,8 +4,6 @@
 
 from typing import Any, Dict, List, Optional
 
-from .tools import JsonSchemaDiff
-
 
 class SchemaStats:
     """Класс для сбора и отображения статистики по схемам"""
@@ -27,25 +25,20 @@ class SchemaStats:
     def add_updated(
         self,
         schema_name: str,
-        old_schema: Optional[Dict[str, Any]] = None,
-        new_schema: Optional[Dict[str, Any]] = None,
+        diff: Optional[str] = None
     ) -> None:
         # Генерируем diff если предоставлены обе схемы
-        if old_schema and new_schema:
-            diff = JsonSchemaDiff.diff(old_schema, new_schema)
-            # Добавляем в updated только если есть реальные изменения
-            if diff and diff.strip():
-                self.updated.append(schema_name)
-                self.updated_diffs[schema_name] = diff
+        if diff and diff.strip():
+            self.updated.append(schema_name)
+            self.updated_diffs[schema_name] = diff
         else:
             # Если схемы не предоставлены, считаем что было обновление
             self.updated.append(schema_name)
 
     def add_uncommitted(
-        self, schema_name: str, old_schema: Dict[str, Any], new_schema: Dict[str, Any]
+        self, schema_name: str, diff: Optional[str] = None
     ) -> None:
         """Добавляет схему с незафиксированными изменениями"""
-        diff = JsonSchemaDiff.diff(old_schema, new_schema)
         # Добавляем только если есть реальные изменения
         if diff and diff.strip():
             self.uncommitted.append(schema_name)
