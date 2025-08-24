@@ -24,7 +24,7 @@ def test_multiple_schema_creation(schemashot, pytestconfig):
     # Verify all schemas were created
     for name in names:
         assert (snapshot_dir / f"{name}.schema.json").exists(), f"{name} not created"
-    
+
     # Clean up created schemas
     for name in names:
         (snapshot_dir / f"{name}.schema.json").unlink()

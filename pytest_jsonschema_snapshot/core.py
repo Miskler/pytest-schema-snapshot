@@ -1,20 +1,25 @@
 import json
 import logging
 from pathlib import Path
-from typing import Any, Callable, Iterable, Optional, Set
+from typing import Any, Callable, Iterable, Optional, Set, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from jsonschema_diff import JsonSchemaDiff
 
 import pytest
 from jsonschema import FormatChecker, ValidationError, validate
 
 from .stats import GLOBAL_STATS
-from .tools import (JsonSchemaDiff, JsonToSchemaConverter, NameMaker,
-                    NameValidator)
+from .tools import (
+    JsonToSchemaConverter, NameMaker, NameValidator
+)
 
 
 class SchemaShot:
     def __init__(
         self,
         root_dir: Path,
+        differ: "JsonSchemaDiff",
         callable_regex: str = "{class_method=.}",
         update_mode: bool = False,
         save_original: bool = False,
@@ -29,12 +34,13 @@ class SchemaShot:
             update_mode: Режим обновления схем (--schema-update)
             snapshot_dir_name: Имя директории для снэпшотов
         """
-        self.root_dir = root_dir
-        self.callable_regex = callable_regex
-        self.update_mode = update_mode
-        self.save_original = save_original
-        self.debug_mode = debug_mode
-        self.snapshot_dir = root_dir / snapshot_dir_name
+        self.root_dir: Path = root_dir
+        self.differ: "JsonSchemaDiff" = differ
+        self.callable_regex: str = callable_regex
+        self.update_mode: bool = update_mode
+        self.save_original: bool = save_original
+        self.debug_mode: bool = debug_mode
+        self.snapshot_dir: Path = root_dir / snapshot_dir_name
         self.used_schemas: Set[str] = set()
 
         self.logger = logging.getLogger(__name__)
@@ -83,15 +89,15 @@ class SchemaShot:
         if self.update_mode:
             json_name = f"{real_name}.json"
             json_path = self.snapshot_dir / json_name
-            
+
             if self.save_original:
                 available_to_create = not json_path.exists() or status is None
                 available_to_update = status == True
-                
+
                 if available_to_create or available_to_update:
                     with open(json_path, "w", encoding="utf-8") as f:
                         json.dump(data, f, indent=2, ensure_ascii=False)
-                    
+
                     if available_to_create:
                         GLOBAL_STATS.add_created(json_name)
                     elif available_to_update:
@@ -166,7 +172,7 @@ class SchemaShot:
         schema_updated = False
 
         if existing_schema != current_schema:  # есть отличия
-            differences = JsonSchemaDiff.diff(existing_schema, current_schema)
+            differences = self.differ.compare(existing_schema, current_schema).render()
 
             if self.update_mode:
                 # обновляем файл

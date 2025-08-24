@@ -208,5 +208,4 @@ class SchemaStats:
             )
 
 
-
 GLOBAL_STATS = SchemaStats()

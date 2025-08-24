@@ -1,6 +1,12 @@
 from pathlib import Path
 from typing import Dict, Generator, Optional
 
+from jsonschema_diff import JsonSchemaDiff, ConfigMaker
+from jsonschema_diff.color import HighlighterPipeline
+from jsonschema_diff.color.stages import (
+    MonoLinesHighlighter, ReplaceGenericHighlighter, PathHighlighter
+)
+
 import pytest
 
 from .core import SchemaShot
@@ -60,10 +66,25 @@ def schemashot(request: pytest.FixtureRequest) -> Generator[SchemaShot, None, No
     schema_dir_name = str(request.config.getini("jsss_dir"))
     callable_regex = str(request.config.getini("jsss_callable_regex"))
 
+    differ = JsonSchemaDiff(
+        ConfigMaker.make(),
+        HighlighterPipeline([
+            MonoLinesHighlighter(),
+            PathHighlighter(),
+            ReplaceGenericHighlighter()
+        ])
+    )
+
     # Создаем или получаем экземпляр SchemaShot для этой директории
     if root_dir not in _schema_managers:
         _schema_managers[root_dir] = SchemaShot(
-            root_dir, callable_regex, update_mode, save_original, debug_mode, schema_dir_name
+            root_dir,
+            differ,
+            callable_regex,
+            update_mode,
+            save_original,
+            debug_mode,
+            schema_dir_name,
         )
 
     # Создаем локальный экземпляр для теста
@@ -134,7 +155,7 @@ def cleanup_unused_schemas(
 
                     # Пытаемся удалить парный JSON: <name>.json
                     # Преобразуем "<name>.schema.json" -> "<name>.json"
-                    base_name = schema_file.name[:-len(".schema.json")]
+                    base_name = schema_file.name[: -len(".schema.json")]
                     paired_json = schema_file.with_name(f"{base_name}.json")
                     if paired_json.exists():
                         try:
