@@ -11,44 +11,44 @@ from jsonschema_diff.color.stages import (MonoLinesHighlighter,
 from .core import SchemaShot
 from .stats import GLOBAL_STATS, SchemaStats
 
-# Глобальное хранилище экземпляров SchemaShot для различных директорий
+# Global storage of SchemaShot instances for different directories
 _schema_managers: Dict[Path, SchemaShot] = {}
 
 
 def pytest_addoption(parser: pytest.Parser) -> None:
-    """Добавляет опцию --schema-update в pytest."""
+    """Adds --schema-update option to pytest."""
     parser.addoption(
         "--schema-update",
         action="store_true",
-        help="Обновить или создать JSON Schema файлы на основе текущих данных",
+        help="Update or create JSON Schema files based on current data",
     )
     parser.addoption(
         "--save-original",
         action="store_true",
-        help="Сохраняет оригинальный JSON рядом со схемой (шаблон имени тот же, но без `.schema` префикса)",
+        help="Save original JSON alongside schema (same name, but without `.schema` prefix)",
     )
     parser.addoption(
         "--pss-debug",
         action="store_true",
-        help="Выводит внутренний стек ошибок (перестает их прятать)",
+        help="Show internal exception stack (stops hiding them)",
     )
 
     parser.addini(
         "jsss_dir",
         default="__snapshots__",
-        help="Директория для хранения схем (по умолчанию: __snapshots__)",
+        help="Directory for storing schemas (default: __snapshots__)",
     )
     parser.addini(
         "jsss_callable_regex",
         default="{class_method=.}",
-        help="Регулярное выражение для сохранения callable части пути",
+        help="Regex for saving callable part of path",
     )
 
 
 @pytest.fixture(scope="function")
 def schemashot(request: pytest.FixtureRequest) -> Generator[SchemaShot, None, None]:
     """
-    Фикстура, предоставляющая экземпляр SchemaShot и собирающая использованные схемы.
+    Fixture providing a SchemaShot instance and gathering used schemas.
     """
     global _schema_managers, GLOBAL_STATS
 
@@ -91,21 +91,21 @@ def schemashot(request: pytest.FixtureRequest) -> Generator[SchemaShot, None, No
 @pytest.hookimpl(trylast=True)
 def pytest_unconfigure(config: pytest.Config) -> None:
     """
-    Хук, который отрабатывает после завершения всех тестов.
-    Очищает глобальные переменные.
+    Hook that runs after all tests have finished.
+    Clears global variables.
     """
     global _schema_managers, GLOBAL_STATS
 
-    # Очищаем словарь
+    # Clear the dictionary
     _schema_managers.clear()
-    # Сбрасываем статистику для следующего запуска
+    # Reset stats for next run
     GLOBAL_STATS = SchemaStats()
 
 
 @pytest.hookimpl(trylast=True)
 def pytest_terminal_summary(terminalreporter, exitstatus: int) -> None:
     """
-    Добавляет сводку о схемах в финальный отчет pytest в терминале.
+    Adds a summary about schemas to the final pytest report in the terminal.
     """
     global GLOBAL_STATS, _schema_managers
 
@@ -126,13 +126,13 @@ def cleanup_unused_schemas(
     manager: SchemaShot, update_mode: bool, stats: Optional[SchemaStats] = None
 ) -> None:
     """
-    Удаляет неиспользованные схемы в режиме обновления и собирает статистику.
-    Дополнительно удаляет парный к `<name>.schema.json` файл `<name>.json`, если он существует.
+    Deletes unused schemas in update mode and collects statistics.
+    Additionally, deletes the pair file `<name>.json` if it exists.
 
     Args:
-        manager: Экземпляр SchemaShot
-        update_mode: Режим обновления
-        stats: Опциональный объект для сбора статистики
+        manager: SchemaShot instance
+        update_mode: Update mode
+        stats: Optional object for collecting statistics
     """
     # Если директория снимков не существует, ничего не делаем
     if not manager.snapshot_dir.exists():

@@ -3,9 +3,9 @@ from typing import Optional
 
 
 class FormatDetector:
-    """Класс для обнаружения форматов строк"""
+    """Class for detecting string formats"""
 
-    # Регулярные выражения для различных форматов
+    # Regular expressions for various formats
     EMAIL_PATTERN = re.compile(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$")
     UUID_PATTERN = re.compile(
         r"^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
@@ -23,18 +23,18 @@ class FormatDetector:
     @classmethod
     def detect_format(cls, value: str) -> Optional[str]:
         """
-        Определяет формат строки.
+        Detects the format of a string.
 
         Args:
-            value: Строка для анализа
+            value: The string to analyze
 
         Returns:
-            Имя формата или None, если формат не определен
+            The name of the format or None if the format is not defined
         """
         if not isinstance(value, str) or not value:
             return None
 
-        # Проверяем форматы в порядке от более специфичных к менее специфичным
+        # Check formats from more specific to less specific
         if cls.EMAIL_PATTERN.match(value):
             return "email"
         elif cls.UUID_PATTERN.match(value):

@@ -1,3 +1,7 @@
+"""
+Core logic of the plugin.
+"""
+
 import json
 import logging
 from pathlib import Path
@@ -27,12 +31,12 @@ class SchemaShot:
         snapshot_dir_name: str = "__snapshots__",
     ):
         """
-        Инициализация SchemaShot.
+        Initializes SchemaShot.
 
         Args:
-            root_dir: Корневая директория проекта
-            update_mode: Режим обновления схем (--schema-update)
-            snapshot_dir_name: Имя директории для снэпшотов
+            root_dir: Project root directory
+            update_mode: Update mode (--schema-update)
+            snapshot_dir_name: Name of the directory for snapshots
         """
         self.root_dir: Path = root_dir
         self.differ: "JsonSchemaDiff" = differ
@@ -56,6 +60,16 @@ class SchemaShot:
             self.snapshot_dir.mkdir(parents=True)
 
     def _process_name(self, name: str | Callable | Iterable[str | Callable]) -> str:
+        """
+        1. Converts callable to string
+        2. Checks for validity
+
+        Returns:
+            str
+        Raises:
+            ValueError
+        """
+
         __tracebackhide__ = not self.debug_mode  # прячем из стека pytest
 
         def process_name_part(part: str | Callable) -> str:
@@ -87,6 +101,15 @@ class SchemaShot:
         data: dict,
         name: str | Callable | Iterable[str | Callable],
     ) -> Optional[bool]:
+        """
+        Asserts for JSON, converts it to schema and then compares.
+
+        Returns:
+            True  – the schema has been updated,
+            False – the schema has not changed,
+            None  – a new schema has been created.
+        """
+
         real_name = self._process_name(name)
 
         builder = JsonToSchemaConverter()
@@ -125,6 +148,15 @@ class SchemaShot:
         schema: dict,
         name: str | Callable | Iterable[str | Callable],
     ) -> Optional[bool]:
+        """
+        Accepts a JSON-schema directly and compares it immediately.
+
+        Returns:
+            True  – the schema has been updated,
+            False – the schema has not changed,
+            None  – a new schema has been created.
+        """
+
         real_name = self._process_name(name)
 
         return self._base_match(None, schema, real_name)[1]
@@ -136,13 +168,13 @@ class SchemaShot:
         name: str,
     ) -> tuple[str, Optional[bool]]:
         """
-        Проверяет соответствие данных json-схеме, при необходимости создаёт/обновляет её
-        и пишет статистику в GLOBAL_STATS.
+        Checks if data matches the JSON schema, creates/updates it if needed,
+        and writes statistics to GLOBAL_STATS.
 
-        Возвращает:
-            True  – схема обновлена,
-            False – схема не изменилась,
-            None  – создана новая схема.
+        Returns:
+            True  – the schema has been updated,
+            False – the schema has not changed,
+            None  – a new schema has been created.
         """
         __tracebackhide__ = not self.debug_mode  # прячем из стека pytest
 

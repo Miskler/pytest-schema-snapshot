@@ -1,12 +1,12 @@
 """
-Модуль для сбора и отображения статистики по схемам.
+Module for collecting and displaying statistics about schemas.
 """
 
 from typing import Dict, List, Optional
 
 
 class SchemaStats:
-    """Класс для сбора и отображения статистики по схемам"""
+    """Class for collecting and displaying statistics about schemas"""
 
     def __init__(self):
         self.created: List[str] = []
@@ -14,40 +14,46 @@ class SchemaStats:
         self.updated_diffs: Dict[str, str] = {}  # schema_name -> diff
         self.uncommitted: List[str] = (
             []
-        )  # Новая категория для незафиксированных изменений
+        )  # New category for uncommitted changes
         self.uncommitted_diffs: Dict[str, str] = {}  # schema_name -> diff
         self.deleted: List[str] = []
         self.unused: List[str] = []
 
     def add_created(self, schema_name: str) -> None:
+        """Adds created schema"""
         self.created.append(schema_name)
 
     def add_updated(self, schema_name: str, diff: Optional[str] = None) -> None:
-        # Генерируем diff если предоставлены обе схемы
+        """Adds updated schema"""
+        # Generate diff if both schemas are provided
         if diff and diff.strip():
             self.updated.append(schema_name)
             self.updated_diffs[schema_name] = diff
         else:
-            # Если схемы не предоставлены, считаем что было обновление
+            # If schemas are not provided, assume it was an update
             self.updated.append(schema_name)
 
     def add_uncommitted(self, schema_name: str, diff: Optional[str] = None) -> None:
-        """Добавляет схему с незафиксированными изменениями"""
-        # Добавляем только если есть реальные изменения
+        """Adds schema with uncommitted changes"""
+        # Add only if there are real changes
         if diff and diff.strip():
             self.uncommitted.append(schema_name)
             self.uncommitted_diffs[schema_name] = diff
 
     def add_deleted(self, schema_name: str) -> None:
+        """Adds deleted schema"""
         self.deleted.append(schema_name)
 
     def add_unused(self, schema_name: str) -> None:
+        """Adds unused schema"""
         self.unused.append(schema_name)
 
     def has_changes(self) -> bool:
+        """Returns True if any schema has changes"""
         return bool(self.created or self.updated or self.deleted)
 
     def has_any_info(self) -> bool:
+        """Is there any information about schemas"""
         return bool(
             self.created
             or self.updated
@@ -60,22 +66,22 @@ class SchemaStats:
         parts = []
         if self.created:
             parts.append(
-                f"Созданные схемы ({len(self.created)}): "
+                f"Created schemas ({len(self.created)}): "
                 + ", ".join(f"`{s}`" for s in self.created)
             )
         if self.updated:
             parts.append(
-                f"Обновленные схемы ({len(self.updated)}): "
+                f"Updated schemas ({len(self.updated)}): "
                 + ", ".join(f"`{s}`" for s in self.updated)
             )
         if self.deleted:
             parts.append(
-                f"Удаленные схемы ({len(self.deleted)}): "
+                f"Deleted schemas ({len(self.deleted)}): "
                 + ", ".join(f"`{s}`" for s in self.deleted)
             )
         if self.unused:
             parts.append(
-                f"Неиспользуемые схемы ({len(self.unused)}): "
+                f"Unused schemas ({len(self.unused)}): "
                 + ", ".join(f"`{s}`" for s in self.unused)
             )
 
@@ -83,19 +89,19 @@ class SchemaStats:
 
     def print_summary(self, terminalreporter, update_mode: bool) -> None:
         """
-        Выводит сводку о схемах в финальный отчет pytest в терминале.
-        Пары "<name>.schema.json" + "<name>.json" сводятся в одну строку:
-        "<name>.schema.json + original" (если original присутствует).
+        Prints schema summary to pytest terminal output.
+        Pairs of "<name>.schema.json" + "<name>.json" are merged into one line:
+        "<name>.schema.json + original" (if original is present).
         """
 
         def _iter_merged(names):
             """
-            Итератор по (display, schema_key):
-            - display: строка для вывода (возможно с " + original")
-            - schema_key: имя файла схемы (<name>.schema.json) для поиска диффов,
-                или None, если это не схема.
-            Сохраняет порядок оригинального списка: объединение происходит
-            в позиции .schema.json; одиночные .json выводятся как есть.
+            Iterates over (display, schema_key):
+            - display: string to display (may have " + original")
+            - schema_key: file name of the schema (<name>.schema.json) to find diffs,
+                or None if it's not a schema.
+            Preserves the original list order: merging happens at .schema.json
+            position; single .json outputs are left as is.
             """
             names = list(names)  # порядок важен
             schema_sfx = ".schema.json"
