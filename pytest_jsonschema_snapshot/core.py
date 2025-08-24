@@ -17,6 +17,7 @@ class SchemaShot:
         root_dir: Path,
         callable_regex: str = "{class_method=.}",
         update_mode: bool = False,
+        save_original: bool = False,
         debug_mode: bool = False,
         snapshot_dir_name: str = "__snapshots__",
     ):
@@ -31,6 +32,7 @@ class SchemaShot:
         self.root_dir = root_dir
         self.callable_regex = callable_regex
         self.update_mode = update_mode
+        self.save_original = save_original
         self.debug_mode = debug_mode
         self.snapshot_dir = root_dir / snapshot_dir_name
         self.used_schemas: Set[str] = set()
@@ -76,7 +78,32 @@ class SchemaShot:
         builder.add_object(data)
         current_schema = builder.to_schema()
 
-        return self._base_match(data, current_schema, real_name)
+        real_name, status = self._base_match(data, current_schema, real_name)
+
+        if self.update_mode:
+            json_name = f"{real_name}.json"
+            json_path = self.snapshot_dir / json_name
+            
+            if self.save_original:
+                available_to_create = not json_path.exists() or status is None
+                available_to_update = status == True
+                
+                if available_to_create or available_to_update:
+                    with open(json_path, "w", encoding="utf-8") as f:
+                        json.dump(data, f, indent=2, ensure_ascii=False)
+                    
+                    if available_to_create:
+                        GLOBAL_STATS.add_created(json_name)
+                    elif available_to_update:
+                        GLOBAL_STATS.add_updated(json_name)
+                    else:
+                        raise ValueError(f"Unexpected status: {status}")
+            else:
+                # удаляем
+                json_path.unlink()
+                GLOBAL_STATS.add_deleted(json_name)
+
+        return status
 
     def assert_schema_match(
         self,
@@ -85,14 +112,14 @@ class SchemaShot:
     ) -> Optional[bool]:
         real_name = self._process_name(name)
 
-        return self._base_match(None, schema, real_name)
+        return self._base_match(None, schema, real_name)[1]
 
     def _base_match(
         self,
         data: Optional[dict],
         current_schema: dict,
         name: str,
-    ) -> Optional[bool]:
+    ) -> tuple[str, Optional[bool]]:
         """
         Проверяет соответствие данных json-схеме, при необходимости создаёт/обновляет её
         и пишет статистику в GLOBAL_STATS.
@@ -132,7 +159,7 @@ class SchemaShot:
 
             self.logger.info(f"New schema `{name}` has been created.")
             GLOBAL_STATS.add_created(schema_path.name)  # статистика «создана»
-            return None
+            return name, None
 
         # --- схема уже была: сравнение и валидация --------------------------------
         existing_schema = old_schema
@@ -183,4 +210,4 @@ class SchemaShot:
                 schema_path.name, existing_schema, current_schema
             )
 
-        return schema_updated
+        return name, schema_updated

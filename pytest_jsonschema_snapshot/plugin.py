@@ -18,10 +18,16 @@ def pytest_addoption(parser: pytest.Parser) -> None:
         help="Обновить или создать JSON Schema файлы на основе текущих данных",
     )
     parser.addoption(
+        "--save-original",
+        action="store_true",
+        help="Сохраняет оригинальный JSON рядом со схемой (шаблон имени тот же, но без `.schema` префикса)",
+    )
+    parser.addoption(
         "--pss-debug",
         action="store_true",
         help="Выводит внутренний стек ошибок (перестает их прятать)",
     )
+
     parser.addini(
         "jsss_dir",
         default="__snapshots__",
@@ -47,6 +53,7 @@ def schemashot(request: pytest.FixtureRequest) -> Generator[SchemaShot, None, No
     )
     root_dir = test_path.parent
     update_mode = bool(request.config.getoption("--schema-update"))
+    save_original = bool(request.config.getoption("--save-original"))
     debug_mode = bool(request.config.getoption("--pss-debug"))
 
     # Получаем настраиваемую директорию для схем
@@ -56,7 +63,7 @@ def schemashot(request: pytest.FixtureRequest) -> Generator[SchemaShot, None, No
     # Создаем или получаем экземпляр SchemaShot для этой директории
     if root_dir not in _schema_managers:
         _schema_managers[root_dir] = SchemaShot(
-            root_dir, callable_regex, update_mode, debug_mode, schema_dir_name
+            root_dir, callable_regex, update_mode, save_original, debug_mode, schema_dir_name
         )
 
     # Создаем локальный экземпляр для теста
@@ -102,6 +109,7 @@ def cleanup_unused_schemas(
 ) -> None:
     """
     Удаляет неиспользованные схемы в режиме обновления и собирает статистику.
+    Дополнительно удаляет парный к `<name>.schema.json` файл `<name>.json`, если он существует.
 
     Args:
         manager: Экземпляр SchemaShot
@@ -119,9 +127,29 @@ def cleanup_unused_schemas(
         if schema_file.name not in manager.used_schemas:
             if update_mode:
                 try:
+                    # Удаляем саму схему
                     schema_file.unlink()
                     if stats:
                         stats.add_deleted(schema_file.name)
+
+                    # Пытаемся удалить парный JSON: <name>.json
+                    # Преобразуем "<name>.schema.json" -> "<name>.json"
+                    base_name = schema_file.name[:-len(".schema.json")]
+                    paired_json = schema_file.with_name(f"{base_name}.json")
+                    if paired_json.exists():
+                        try:
+                            paired_json.unlink()
+                            if stats:
+                                stats.add_deleted(paired_json.name)
+                        except OSError as e:
+                            manager.logger.warning(
+                                f"Failed to delete paired JSON for {schema_file.name} ({paired_json.name}): {e}"
+                            )
+                        except Exception as e:
+                            manager.logger.error(
+                                f"Unexpected error deleting paired JSON for {schema_file.name} ({paired_json.name}): {e}"
+                            )
+
                 except OSError as e:
                     # Логируем ошибки удаления, но не прерываем работу
                     manager.logger.warning(

@@ -97,72 +97,116 @@ class SchemaStats:
     def print_summary(self, terminalreporter, update_mode: bool) -> None:
         """
         Выводит сводку о схемах в финальный отчет pytest в терминале.
+        Пары "<name>.schema.json" + "<name>.json" сводятся в одну строку:
+        "<name>.schema.json + original" (если original присутствует).
         """
+
+        def _iter_merged(names):
+            """
+            Итератор по (display, schema_key):
+            - display: строка для вывода (возможно с " + original")
+            - schema_key: имя файла схемы (<name>.schema.json) для поиска диффов,
+                или None, если это не схема.
+            Сохраняет порядок оригинального списка: объединение происходит
+            в позиции .schema.json; одиночные .json выводятся как есть.
+            """
+            names = list(names)  # порядок важен
+            schema_sfx = ".schema.json"
+            json_sfx = ".json"
+
+            # множество баз, где имеются схемы/оригиналы
+            bases_with_schema = {
+                n[: -len(schema_sfx)] for n in names if n.endswith(schema_sfx)
+            }
+            bases_with_original = {
+                n[: -len(json_sfx)]
+                for n in names
+                if n.endswith(json_sfx) and not n.endswith(schema_sfx)
+            }
+
+            for n in names:
+                if n.endswith(schema_sfx):
+                    base = n[: -len(schema_sfx)]
+                    if base in bases_with_original:
+                        yield f"{n} + original", n  # display, schema_key
+                    else:
+                        yield n, n
+                elif n.endswith(json_sfx) and not n.endswith(schema_sfx):
+                    base = n[: -len(json_sfx)]
+                    # если есть парная схема — .json не выводим отдельно
+                    if base in bases_with_schema:
+                        continue
+                    yield n, None
+                else:
+                    # на всякий случай — прочие имена
+                    yield n, n
+
         if not self.has_any_info():
             return
 
-        # Добавляем заголовок
         terminalreporter.write_sep("=", "Schema Summary")
 
-        # Выводим статистику
+        # Created
         if self.created:
             terminalreporter.write_line(
                 f"Created schemas ({len(self.created)}):", green=True
             )
-            for schema in self.created:
-                terminalreporter.write_line(f"  - {schema}", green=True)
+            for display, _key in _iter_merged(self.created):
+                terminalreporter.write_line(f"  - {display}", green=True)
 
+        # Updated
         if self.updated:
             terminalreporter.write_line(
                 f"Updated schemas ({len(self.updated)}):", yellow=True
             )
-            for schema in self.updated:
-                terminalreporter.write_line(f"  - {schema}", yellow=True)
-                # Показываем diff если он есть
-                if schema in self.updated_diffs:
+            for display, key in _iter_merged(self.updated):
+                terminalreporter.write_line(f"  - {display}", yellow=True)
+                # Показываем diff, если он есть под ключом схемы (.schema.json)
+                if key and key in self.updated_diffs:
                     terminalreporter.write_line("    Changes:", yellow=True)
-                    # Выводим diff построчно с отступом
-                    for line in self.updated_diffs[schema].split("\n"):
+                    for line in self.updated_diffs[key].split("\n"):
                         if line.strip():
                             terminalreporter.write_line(f"      {line}")
-                    terminalreporter.write_line("")  # Пустая строка для разделения
-                else:
+                    terminalreporter.write_line("")  # разделение
+                elif key:
                     terminalreporter.write_line(
                         "    (Schema unchanged - no differences detected)", cyan=True
                     )
 
+        # Uncommitted
         if self.uncommitted:
             terminalreporter.write_line(
                 f"Uncommitted minor updates ({len(self.uncommitted)}):", bold=True
             )
-            for schema in self.uncommitted:
-                terminalreporter.write_line(f"  - {schema}", cyan=True)
-                # Показываем diff для незафиксированных изменений
-                if schema in self.uncommitted_diffs:
+            for display, key in _iter_merged(self.uncommitted):
+                terminalreporter.write_line(f"  - {display}", cyan=True)
+                if key and key in self.uncommitted_diffs:
                     terminalreporter.write_line("    Detected changes:", cyan=True)
-                    # Выводим diff построчно с отступом
-                    for line in self.uncommitted_diffs[schema].split("\n"):
+                    for line in self.uncommitted_diffs[key].split("\n"):
                         if line.strip():
                             terminalreporter.write_line(f"      {line}")
-                    terminalreporter.write_line("")  # Пустая строка для разделения
+                    terminalreporter.write_line("")  # разделение
             terminalreporter.write_line(
                 "Use --schema-update to commit these changes", cyan=True
             )
 
+        # Deleted
         if self.deleted:
             terminalreporter.write_line(
                 f"Deleted schemas ({len(self.deleted)}):", red=True
             )
-            for schema in self.deleted:
-                terminalreporter.write_line(f"  - {schema}", red=True)
+            for display, _key in _iter_merged(self.deleted):
+                terminalreporter.write_line(f"  - {display}", red=True)
 
+        # Unused (только если не update_mode)
         if self.unused and not update_mode:
             terminalreporter.write_line(f"Unused schemas ({len(self.unused)}):")
-            for schema in self.unused:
-                terminalreporter.write_line(f"  - {schema}")
+            for display, _key in _iter_merged(self.unused):
+                terminalreporter.write_line(f"  - {display}")
             terminalreporter.write_line(
                 "Use --schema-update to delete unused schemas", yellow=True
             )
+
 
 
 GLOBAL_STATS = SchemaStats()
