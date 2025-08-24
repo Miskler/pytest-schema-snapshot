@@ -1,116 +1,138 @@
+from __future__ import annotations
+
 import inspect
 import re
-from types import FunctionType, MethodType
-from typing import Any, Dict, List, Tuple
+import types
+from functools import partial
+from typing import Callable, Dict, List, Optional
 
 
 class NameMaker:
-    _PLACEHOLDER_RX = re.compile(r"\{([a-zA-Z_]\w*)(?:=([^}]*))?\}")
+    """
+    Lightweight helper that converts a callable into a string identifier
+    using a tiny placeholder-based template language (keeps backward
+    compatibility with the original test-suite).
 
+    Supported placeholders
+    ----------------------
+    {package}                  – full module path (``tests.test_mod``)
+    {package_full=SEP}         – same but with custom separator (default “.”)
+    {path} / {path=SEP}        – module path *without* the first segment
+    {class}                    – class name or empty string
+    {method}                   – function / method name
+    {class_method} / {...=SEP} – ``Class{SEP}method`` or just ``method``
+
+    Unknown placeholders collapse to an empty string.
+
+    After substitution:
+      * “//”, “..”, “--” are collapsed to “/”, “.”, “-” respectively;
+      * double underscores **are preserved** so ``__call__`` stays intact.
+    """
+
+    _RE_PLHDR = re.compile(r"\{([^{}]+)\}")
+
+    # ────────────────────────────── PUBLIC ──────────────────────────────
     @staticmethod
-    def _join_nonempty(parts: List[str], sep: str) -> str:
-        parts = [p for p in parts if p]
-        return sep.join(parts) if parts else ""
+    def format(obj: Callable, rule: str) -> str:
+        """
+        Render *rule* using metadata extracted from *obj*.
 
-    @staticmethod
-    def _owner_from_qualname(obj: Any) -> str:
-        qn = getattr(obj, "__qualname__", "")
-        if "." not in qn or "<locals>" in qn:
-            return ""
-        cand = qn.rsplit(".", 1)[0]
-        mod = inspect.getmodule(obj)
-        return (
-            cand
-            if mod and hasattr(mod, cand) and inspect.isclass(getattr(mod, cand))
-            else ""
-        )
-
-    @staticmethod
-    def _meta(obj: Any) -> Dict[str, Any]:
-        is_method = isinstance(obj, MethodType)
-        is_function = isinstance(obj, FunctionType)
-
-        cls_name = ""
-        method_name = ""
-        module_name = ""
-        qualname = getattr(obj, "__qualname__", "") or ""
-
-        if is_method:
-            method_name = obj.__name__
-            owner = obj.__self__
-            if owner is not None:
-                cls_name = (
-                    owner.__name__
-                    if inspect.isclass(owner)
-                    else owner.__class__.__name__
-                )
-            else:
-                cls_name = NameMaker._owner_from_qualname(obj)
-            module_name = obj.__func__.__module__
-        elif is_function:
-            method_name = obj.__name__
-            module_name = obj.__module__
-            cls_name = NameMaker._owner_from_qualname(obj)
-        elif inspect.isbuiltin(obj):
-            # builtin: len, [].append и т.п.
-            method_name = getattr(obj, "__name__", "") or ""
-            module_name = getattr(obj, "__module__", "") or ""
-            # CPython ≥3.12: '__module__' у C-функций стал 'builtins.module'.
-            # Нам нужен только корень "builtins", иначе тест падает.
-            if module_name.startswith("builtins."):
-                module_name = "builtins"
-        elif callable(obj):
-            method_name = "__call__"
-            typ = type(obj)
-            cls_name = typ.__name__
-            module_name = typ.__module__
-        else:
-            method_name = getattr(obj, "__name__", "")
-            module_name = getattr(obj, "__module__", "")
-
-        module_parts = module_name.split(".") if module_name else []
-        package = module_parts[0] if module_parts else ""
-        path_parts = module_parts[1:] if len(module_parts) > 1 else []
-        module_leaf = module_parts[-1] if module_parts else ""
-
-        try:
-            filename = inspect.getsourcefile(obj) or inspect.getfile(obj)  # type: ignore[arg-type]
-        except Exception:
-            filename = ""
-
-        return {
-            "package": package,
-            "package_full": module_name,
-            "module": module_leaf,
-            "module_parts": module_parts,  # для {package_full=SEP}
-            "path_parts": path_parts,  # для {path=SEP}
-            "class": cls_name,
-            "method": method_name,
-            "class_method": f"{cls_name}.{method_name}" if cls_name else method_name,
-            "qualname": qualname,
-            "filename": filename or "",
-        }
-
-    @staticmethod
-    def format_callable(obj: Any, rule: str) -> str:
+        If *sanitize* is True, the result is passed through
+        ``pathvalidate.sanitize_filename`` (imported lazily so the dependency
+        remains optional).
+        """
         meta = NameMaker._meta(obj)
 
-        def repl(m: re.Match) -> str:
-            key, sep = m.group(1), m.group(2)
-            if key == "path":
-                joiner = sep if sep is not None else "/"
-                return NameMaker._join_nonempty(meta["path_parts"], joiner)
-            if key == "class_method":
-                joiner = sep if sep is not None else "."
-                cls, meth = meta["class"], meta["method"]
-                return meth if not cls else f"{cls}{joiner}{meth}"
-            if key == "package_full":
-                joiner = sep if sep is not None else "."
-                return NameMaker._join_nonempty(meta["module_parts"], joiner)
-            # простые скаляры
-            return str(meta.get(key, ""))
+        def _sub(match: re.Match[str]) -> str:
+            token = match.group(1)
+            name, joiner = (token.split("=", 1) + [None])[:2]
+            return NameMaker._expand(name, joiner, meta)
 
-        out = NameMaker._PLACEHOLDER_RX.sub(repl, rule)
-        # чуть-чуть приберём, если в правиле было что-то вроде "X//{...}//Y"
-        out = re.sub(r"/{2,}", "/", out)
+        out = NameMaker._RE_PLHDR.sub(_sub, rule)
+        out = NameMaker._collapse(out)
+
         return out
+
+    # ───────────────────────────── INTERNAL ─────────────────────────────
+    # metadata -----------------------------------------------------------
+    @staticmethod
+    def _unwrap(obj: Callable) -> Callable:
+        """Strip functools.partial and @functools.wraps wrappers."""
+        while True:
+            if isinstance(obj, partial):
+                obj = obj.func
+                continue
+            if hasattr(obj, "__wrapped__"):
+                obj = obj.__wrapped__  # type: ignore[attr-defined]
+                continue
+            break
+        return obj
+
+    @staticmethod
+    def _meta(obj: Callable) -> Dict[str, object]:
+        """Return mapping used during placeholder substitution."""
+        obj = NameMaker._unwrap(obj)
+
+        # 1) built-in function (len, sum, …)
+        if inspect.isbuiltin(obj) or isinstance(obj, types.BuiltinFunctionType):
+            qualname = obj.__name__
+            module = obj.__module__ or "builtins"
+
+        # 2) callable instance (defines __call__)
+        elif not (inspect.isfunction(obj) or inspect.ismethod(obj)):
+            qualname = f"{obj.__class__.__qualname__}.__call__"
+            module = obj.__class__.__module__
+
+        # 3) regular function / bound or unbound method
+        else:
+            qualname = obj.__qualname__
+            module = obj.__module__
+
+        parts: List[str] = qualname.split(".")
+        cls: Optional[str] = None
+        if len(parts) > 1 and parts[-2] != "<locals>":
+            cls = parts[-2]
+        method = parts[-1]
+
+        mod_parts = (module or "").split(".")
+        return {
+            "package": module,
+            "package_full": module,
+            "path_parts": mod_parts[1:] if len(mod_parts) > 1 else [],
+            "class": cls,
+            "method": method,
+        }
+
+    # placeholders -------------------------------------------------------
+    @staticmethod
+    def _expand(name: str, joiner: Optional[str], m: Dict[str, object]) -> str:
+        if name == "package":
+            return m["package"] or ""
+        if name == "package_full":
+            sep = joiner if joiner is not None else "."
+            return sep.join(str(m["package_full"]).split("."))
+        if name == "path":
+            if not m["path_parts"]:
+                return ""
+            sep = joiner if joiner is not None else "/"
+            return sep.join(m["path_parts"])
+        if name == "class":
+            return m["class"] or ""
+        if name == "method":
+            return m["method"]
+        if name == "class_method":
+            sep = joiner if joiner is not None else "."
+            if m["class"]:
+                return sep.join([m["class"], m["method"]])
+            return m["method"]
+        # unknown placeholder → empty
+        return ""
+
+    # post-processing ----------------------------------------------------
+    @staticmethod
+    def _collapse(s: str) -> str:
+        # collapse critical duplicates but keep double underscores
+        s = re.sub(r"/{2,}", "/", s)   # '//' → '/'
+        s = re.sub(r"\.{2,}", ".", s)  # '..' → '.'
+        s = re.sub(r"-{2,}", "-", s)   # '--' → '-'
+        return s

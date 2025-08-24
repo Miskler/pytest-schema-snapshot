@@ -61,7 +61,7 @@ class SchemaShot:
 
         def process_name_part(part: str | Callable) -> str:
             if callable(part):
-                return NameMaker.format_callable(part, self.callable_regex)
+                return NameMaker.format(part, self.callable_regex)
             else:
                 return part
 

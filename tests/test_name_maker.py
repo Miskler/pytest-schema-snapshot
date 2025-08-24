@@ -95,35 +95,35 @@ def _expected_prefix_for_module(obj, use_path_dot: bool = True) -> str:
 
 def test_free_function_class_method_joiner_slash():
     rule = "{package}/{path=.}/{class_method=/}"
-    got = NameMaker.format_callable(free_func, rule)
+    got = NameMaker.format(free_func, rule)
     exp_prefix = _expected_prefix_for_module(free_func, use_path_dot=True)
     assert got == f"{exp_prefix}free_func"
 
 
 def test_bound_method_class_method_joiner_slash():
     rule = "{package}/{path=.}/{class_method=/}"
-    got = NameMaker.format_callable(C().m, rule)
+    got = NameMaker.format(C().m, rule)
     exp_prefix = _expected_prefix_for_module(C().m, use_path_dot=True)
     assert got == f"{exp_prefix}C/m"
 
 
 def test_unbound_method_detects_class_via_qualname():
     rule = "{package}/{path=.}/{class_method=/}"
-    got = NameMaker.format_callable(C.m, rule)  # функция, извлечённая у класса
+    got = NameMaker.format(C.m, rule)  # функция, извлечённая у класса
     exp_prefix = _expected_prefix_for_module(C.m, use_path_dot=True)
     assert got == f"{exp_prefix}C/m"
 
 
 def test_staticmethod_detects_class():
     rule = "{package}/{path=.}/{class_method=/}"
-    got = NameMaker.format_callable(C.s, rule)  # обращаемся как к атрибуту класса
+    got = NameMaker.format(C.s, rule)  # обращаемся как к атрибуту класса
     exp_prefix = _expected_prefix_for_module(C.s, use_path_dot=True)
     assert got == f"{exp_prefix}C/s"
 
 
 def test_classmethod_owner_is_class():
     rule = "{package}/{path=.}/{class_method=/}"
-    got = NameMaker.format_callable(C.c, rule)
+    got = NameMaker.format(C.c, rule)
     exp_prefix = _expected_prefix_for_module(C.c, use_path_dot=True)
     assert got == f"{exp_prefix}C/c"
 
@@ -131,7 +131,7 @@ def test_classmethod_owner_is_class():
 def test_callable_object_uses_dunder_call():
     rule = "{package}/{path=.}/{class_method=/}"
     k = K()
-    got = NameMaker.format_callable(k, rule)
+    got = NameMaker.format(k, rule)
     exp_prefix = _expected_prefix_for_module(k, use_path_dot=True)
     assert got == f"{exp_prefix}K/__call__"
 
@@ -139,7 +139,7 @@ def test_callable_object_uses_dunder_call():
 def test_lambda_treated_as_function():
     f = lambda x: x  # noqa: E731
     rule = "{package}/{path=.}/{class_method=/}"
-    got = NameMaker.format_callable(f, rule)
+    got = NameMaker.format(f, rule)
     exp_prefix = _expected_prefix_for_module(f, use_path_dot=True)
     # у лямбды имя <lambda>
     assert got == f"{exp_prefix}<lambda>"
@@ -147,7 +147,7 @@ def test_lambda_treated_as_function():
 
 def test_builtins_len_has_no_path():
     rule = "{package}/{path=/}/{class_method=/}"
-    got = NameMaker.format_callable(len, rule)
+    got = NameMaker.format(len, rule)
     # builtins → нет path; joiner для path не вставляется
     assert got == "builtins/len"
 
@@ -155,7 +155,7 @@ def test_builtins_len_has_no_path():
 def test_inner_function_has_no_class_due_to_locals():
     inner = make_inner()
     rule = "{package}/{path=.}/{class_method=/}"
-    got = NameMaker.format_callable(inner, rule)
+    got = NameMaker.format(inner, rule)
     exp_prefix = _expected_prefix_for_module(inner, use_path_dot=True)
     # класс не извлекается из __qualname__ из-за '<locals>'
     assert got == f"{exp_prefix}inner"
@@ -163,20 +163,20 @@ def test_inner_function_has_no_class_due_to_locals():
 
 def test_decorator_without_wraps_changes_method_name():
     rule = "{method}"
-    got = NameMaker.format_callable(decorated_plain, rule)
+    got = NameMaker.format(decorated_plain, rule)
     # без wraps имя метода — wrapper
     assert got == "wrapper"
 
 
 def test_decorator_with_wraps_preserves_original_name():
     rule = "{method}"
-    got = NameMaker.format_callable(decorated_wrapped, rule)
+    got = NameMaker.format(decorated_wrapped, rule)
     assert got == "decorated_wrapped"
 
 
 def test_package_full_with_custom_separator():
     rule = "{package_full=/}"
-    got = NameMaker.format_callable(free_func, rule)
+    got = NameMaker.format(free_func, rule)
     # ожидаем модуль в формате с '/'
     mod_full = free_func.__module__
     assert got == "/".join(mod_full.split(".")) if mod_full else ""
@@ -185,34 +185,34 @@ def test_package_full_with_custom_separator():
 def test_path_default_separator_and_override():
     # по умолчанию path без "=SEP" собирается через '/'
     rule_default = "{path}"
-    got_default = NameMaker.format_callable(free_func, rule_default)
+    got_default = NameMaker.format(free_func, rule_default)
     mod_parts = (free_func.__module__ or "").split(".")
     path_slash = "/".join(mod_parts[1:]) if len(mod_parts) > 1 else ""
     assert got_default == path_slash
 
     # с переопределением разделителя: {path=.}
     rule_dot = "{path=.}"
-    got_dot = NameMaker.format_callable(free_func, rule_dot)
+    got_dot = NameMaker.format(free_func, rule_dot)
     path_dot = ".".join(mod_parts[1:]) if len(mod_parts) > 1 else ""
     assert got_dot == path_dot
 
 
 def test_class_method_joiner_vs_literal_class_slash_method_difference():
     # у свободной функции {class}/{method} даёт ведущий '/', а {class_method=/} — нет
-    got_join = NameMaker.format_callable(free_func, "{class_method=/}")
-    got_lit = NameMaker.format_callable(free_func, "{class}/{method}")
+    got_join = NameMaker.format(free_func, "{class_method=/}")
+    got_lit = NameMaker.format(free_func, "{class}/{method}")
     assert got_join == "free_func"
     assert got_lit == "/free_func"
 
 
 def test_double_slashes_from_literal_collapsed():
     # правило с литеральными '//' схлопывается
-    got = NameMaker.format_callable(C().m, "X//{class_method=/}//Y")
+    got = NameMaker.format(C().m, "X//{class_method=/}//Y")
     assert got == "X/C/m/Y"
 
 
 def test_unknown_placeholder_becomes_empty():
-    got = NameMaker.format_callable(free_func, "A{unknown}B")
+    got = NameMaker.format(free_func, "A{unknown}B")
     assert got == "AB"
 
 
@@ -229,6 +229,6 @@ def test_unknown_placeholder_becomes_empty():
 )
 def test_matrix_basic_suffixes(obj, expected_suffix):
     rule = "{package}/{path=.}/{class_method=/}"
-    got = NameMaker.format_callable(obj, rule)
+    got = NameMaker.format(obj, rule)
     exp_prefix = _expected_prefix_for_module(obj, use_path_dot=True)
     assert got == f"{exp_prefix}{expected_suffix}"
