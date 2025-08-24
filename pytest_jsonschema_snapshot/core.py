@@ -113,7 +113,7 @@ class SchemaShot:
                         GLOBAL_STATS.add_updated(json_name)
                     else:
                         raise ValueError(f"Unexpected status: {status}")
-            else:
+            elif json_path.exists():
                 # удаляем
                 json_path.unlink()
                 GLOBAL_STATS.add_deleted(json_name)

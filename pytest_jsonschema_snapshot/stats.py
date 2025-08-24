@@ -2,7 +2,7 @@
 Модуль для сбора и отображения статистики по схемам.
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Dict, List, Optional
 
 
 class SchemaStats:
