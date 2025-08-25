@@ -28,12 +28,18 @@ class NameMaker:
 
     Supported placeholders
     ----------------------
-    {package}                  – full module path (``tests.test_mod``)
-    {package_full=SEP}         – same but with custom separator (default “.”)
-    {path} / {path=SEP}        – module path *without* the first segment
-    {class}                    – class name or empty string
-    {method}                   – function / method name
-    {class_method} / {...=SEP} – ``Class{SEP}method`` or just ``method``
+
+    `{package}`                  – full module path (``tests.test_mod``)
+
+    `{package_full=SEP}`         – same but with custom separator (default “.”)
+
+    `{path} / {path=SEP}`        – module path *without* the first segment
+
+    `{class}`                    – class name or empty string
+
+    `{method}`                   – function / method name
+
+    `{class_method} / {...=SEP}` – ``Class{SEP}method`` or just ``method``
 
     Unknown placeholders collapse to an empty string.
 
