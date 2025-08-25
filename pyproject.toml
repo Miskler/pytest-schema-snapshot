@@ -51,3 +51,6 @@ python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
 addopts = "-ra -q --cov=pytest_jsonschema_snapshot --cov-report=term-missing --cov-report=html"
+
+[tool.isort]
+profile = "black"

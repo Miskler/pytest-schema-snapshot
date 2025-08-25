@@ -4,9 +4,11 @@ from typing import Dict, Generator, Optional
 import pytest
 from jsonschema_diff import ConfigMaker, JsonSchemaDiff
 from jsonschema_diff.color import HighlighterPipeline
-from jsonschema_diff.color.stages import (MonoLinesHighlighter,
-                                          PathHighlighter,
-                                          ReplaceGenericHighlighter)
+from jsonschema_diff.color.stages import (
+    MonoLinesHighlighter,
+    PathHighlighter,
+    ReplaceGenericHighlighter,
+)
 
 from .core import SchemaShot
 from .stats import SchemaStats
