@@ -4,6 +4,7 @@ jsonschema
 jsonschema-diff
 pytest
 
+types-jsonschema
 pytest-asyncio
 pytest-cov
 pytest-xdist
