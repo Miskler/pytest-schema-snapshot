@@ -9,7 +9,7 @@ from jsonschema_diff.color.stages import (MonoLinesHighlighter,
                                           ReplaceGenericHighlighter)
 
 from .core import SchemaShot
-from .stats import GLOBAL_STATS, SchemaStats
+from .stats import SchemaStats
 
 # Global storage of SchemaShot instances for different directories
 _schema_managers: Dict[Path, SchemaShot] = {}
@@ -50,7 +50,6 @@ def schemashot(request: pytest.FixtureRequest) -> Generator[SchemaShot, None, No
     """
     Fixture providing a SchemaShot instance and gathering used schemas.
     """
-    global _schema_managers, GLOBAL_STATS
 
     # Получаем путь к тестовому файлу
     test_path = Path(
@@ -94,7 +93,7 @@ def pytest_unconfigure(config: pytest.Config) -> None:
     Hook that runs after all tests have finished.
     Clears global variables.
     """
-    global _schema_managers, GLOBAL_STATS
+    global GLOBAL_STATS
 
     # Clear the dictionary
     _schema_managers.clear()
@@ -107,7 +106,6 @@ def pytest_terminal_summary(terminalreporter, exitstatus: int) -> None:
     """
     Adds a summary about schemas to the final pytest report in the terminal.
     """
-    global GLOBAL_STATS, _schema_managers
 
     # Выполняем cleanup перед показом summary
     if _schema_managers:
@@ -161,11 +159,11 @@ def cleanup_unused_schemas(
                                 stats.add_deleted(paired_json.name)
                         except OSError as e:
                             manager.logger.warning(
-                                f"Failed to delete paired JSON for {schema_file.name} ({paired_json.name}): {e}"
+                                f"Failed to delete paired JSON for {schema_file.name}: {e}"
                             )
                         except Exception as e:
                             manager.logger.error(
-                                f"Unexpected error deleting paired JSON for {schema_file.name} ({paired_json.name}): {e}"
+                                f"Unexpected error deleting paired JSON for {schema_file.name}: {e}"
                             )
 
                 except OSError as e:

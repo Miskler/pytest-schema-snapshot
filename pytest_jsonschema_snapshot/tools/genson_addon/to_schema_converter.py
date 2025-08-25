@@ -2,11 +2,9 @@
 Module for advanced JSON Schema generation with format detection support.
 """
 
-import re
 from typing import Any, Dict, Optional
 
 from genson import SchemaBuilder
-from genson.schema.strategies import Object
 
 from .format_detector import FormatDetector
 

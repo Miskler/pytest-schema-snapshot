@@ -1,4 +1,3 @@
-import types
 from functools import wraps
 
 import pytest

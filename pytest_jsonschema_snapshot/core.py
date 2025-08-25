@@ -124,7 +124,7 @@ class SchemaShot:
 
             if self.save_original:
                 available_to_create = not json_path.exists() or status is None
-                available_to_update = status == True
+                available_to_update = status is True
 
                 if available_to_create or available_to_update:
                     with open(json_path, "w", encoding="utf-8") as f:
@@ -177,8 +177,6 @@ class SchemaShot:
             None  – a new schema has been created.
         """
         __tracebackhide__ = not self.debug_mode  # прячем из стека pytest
-
-        global GLOBAL_STATS
 
         # Проверка имени
         name = self._process_name(name)

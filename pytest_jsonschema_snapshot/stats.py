@@ -8,13 +8,11 @@ from typing import Dict, List, Optional
 class SchemaStats:
     """Class for collecting and displaying statistics about schemas"""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.created: List[str] = []
         self.updated: List[str] = []
         self.updated_diffs: Dict[str, str] = {}  # schema_name -> diff
-        self.uncommitted: List[str] = (
-            []
-        )  # New category for uncommitted changes
+        self.uncommitted: List[str] = []  # New category for uncommitted changes
         self.uncommitted_diffs: Dict[str, str] = {}  # schema_name -> diff
         self.deleted: List[str] = []
         self.unused: List[str] = []

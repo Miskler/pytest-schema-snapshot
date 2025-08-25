@@ -1,5 +1,3 @@
-import pytest
-
 from pytest_jsonschema_snapshot.stats import SchemaStats
 
 
