@@ -38,6 +38,9 @@ urls = { Homepage = "https://github.com/Open-Inflation/pytest-jsonschema-snapsho
 [project.entry-points."pytest11"]
 schemashot = "pytest_jsonschema_snapshot.plugin"
 
+[tool.setuptools.package-data]
+"jsonschema_diff" = ["py.typed"]
+
 [tool.hatch.version]
 path = "pytest_jsonschema_snapshot/__init__.py"
 

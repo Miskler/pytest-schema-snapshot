@@ -4,9 +4,22 @@ import inspect
 import re
 import types
 from functools import partial
-from typing import Callable, Dict, List, Optional
+from typing import Callable, List, Optional, TypedDict
+
+# ──────────────────────────── Типы ────────────────────────────
+_Meta = TypedDict(
+    "_Meta",
+    {
+        "package": str,
+        "package_full": str,
+        "path_parts": List[str],
+        "class": Optional[str],
+        "method": str,
+    },
+)
 
 
+# ──────────────────────────── Класс ───────────────────────────
 class NameMaker:
     """
     Lightweight helper that converts a callable into a string identifier
@@ -31,45 +44,42 @@ class NameMaker:
 
     _RE_PLHDR = re.compile(r"\{([^{}]+)\}")
 
-    # ────────────────────────────── PUBLIC ──────────────────────────────
+    # ───────────────────────────── PUBLIC ──────────────────────────────
     @staticmethod
-    def format(obj: Callable, rule: str) -> str:
+    def format(obj: Callable[..., object], rule: str) -> str:
         """
         Render *rule* using metadata extracted from *obj*.
-
-        If *sanitize* is True, the result is passed through
-        ``pathvalidate.sanitize_filename`` (imported lazily so the dependency
-        remains optional).
         """
-        meta = NameMaker._meta(obj)
+        meta: _Meta = NameMaker._meta(obj)
 
-        def _sub(match: re.Match[str]) -> str:
-            token = match.group(1)
-            name, joiner = (token.split("=", 1) + [None])[:2]
+        def _sub(match: re.Match[str]) -> str:  # noqa: N802
+            token: str | None = match.group(1)
+            name: str = token.split("=", 1)[0] if token else ""
+            joiner: str | None = (
+                token.split("=", 1)[1] if token and "=" in token else None
+            )
             return NameMaker._expand(name, joiner, meta)
 
         out = NameMaker._RE_PLHDR.sub(_sub, rule)
-        out = NameMaker._collapse(out)
+        return NameMaker._collapse(out)
 
-        return out
-
-    # ───────────────────────────── INTERNAL ─────────────────────────────
-    # metadata -----------------------------------------------------------
+    # ──────────────────────────── INTERNAL ────────────────────────────
+    # metadata ----------------------------------------------------------
     @staticmethod
-    def _unwrap(obj: Callable) -> Callable:
+    def _unwrap(obj: Callable[..., object]) -> Callable[..., object]:
         """Strip functools.partial and @functools.wraps wrappers."""
         while True:
             if isinstance(obj, partial):
-                obj = obj.func
+                obj = obj.func  # type: ignore[assignment]
                 continue
             if hasattr(obj, "__wrapped__"):
-                obj = obj.__wrapped__  # type: ignore[attr-defined]
+                obj = obj.__wrapped__  # type: ignore[attr-defined,assignment]
                 continue
             break
         return obj
 
     @staticmethod
-    def _meta(obj: Callable) -> Dict[str, object]:
+    def _meta(obj: Callable[..., object]) -> _Meta:
         """Return mapping used during placeholder substitution."""
         obj = NameMaker._unwrap(obj)
 
@@ -103,14 +113,14 @@ class NameMaker:
             "method": method,
         }
 
-    # placeholders -------------------------------------------------------
+    # placeholders ------------------------------------------------------
     @staticmethod
-    def _expand(name: str, joiner: Optional[str], m: Dict[str, object]) -> str:
+    def _expand(name: str, joiner: Optional[str], m: _Meta) -> str:
         if name == "package":
-            return m["package"] or ""
+            return m["package"]
         if name == "package_full":
             sep = joiner if joiner is not None else "."
-            return sep.join(str(m["package_full"]).split("."))
+            return sep.join(m["package_full"].split("."))
         if name == "path":
             if not m["path_parts"]:
                 return ""
@@ -122,13 +132,14 @@ class NameMaker:
             return m["method"]
         if name == "class_method":
             sep = joiner if joiner is not None else "."
-            if m["class"]:
-                return sep.join([m["class"], m["method"]])
+            cls_name = m["class"]
+            if cls_name:
+                return sep.join([cls_name, m["method"]])
             return m["method"]
         # unknown placeholder → empty
         return ""
 
-    # post-processing ----------------------------------------------------
+    # post-processing ---------------------------------------------------
     @staticmethod
     def _collapse(s: str) -> str:
         # collapse critical duplicates but keep double underscores

@@ -59,7 +59,9 @@ class SchemaShot:
         if not self.snapshot_dir.exists():
             self.snapshot_dir.mkdir(parents=True)
 
-    def _process_name(self, name: str | Callable | Iterable[str | Callable]) -> str:
+    def _process_name(
+        self, name: str | int | Callable | list[str | int | Callable]
+    ) -> str:
         """
         1. Converts callable to string
         2. Checks for validity
@@ -72,11 +74,11 @@ class SchemaShot:
 
         __tracebackhide__ = not self.debug_mode  # прячем из стека pytest
 
-        def process_name_part(part: str | Callable) -> str:
+        def process_name_part(part: str | int | Callable) -> str:
             if callable(part):
                 return NameMaker.format(part, self.callable_regex)
             else:
-                return part
+                return str(part)
 
         if isinstance(name, (list, tuple)):
             name = ".".join([process_name_part(part) for part in name])
@@ -99,7 +101,7 @@ class SchemaShot:
     def assert_json_match(
         self,
         data: dict,
-        name: str | Callable | Iterable[str | Callable],
+        name: str | int | Callable | list[str | int | Callable],
     ) -> Optional[bool]:
         """
         Asserts for JSON, converts it to schema and then compares.
@@ -146,7 +148,7 @@ class SchemaShot:
     def assert_schema_match(
         self,
         schema: dict,
-        name: str | Callable | Iterable[str | Callable],
+        name: str | int | Callable | list[str | int | Callable],
     ) -> Optional[bool]:
         """
         Accepts a JSON-schema directly and compares it immediately.
@@ -187,11 +189,6 @@ class SchemaShot:
         # --- состояние ДО проверки ---
         schema_exists_before = schema_path.exists()
 
-        old_schema = None
-        if schema_exists_before:
-            with open(schema_path, "r", encoding="utf-8") as f:
-                old_schema = json.load(f)
-
         # --- когда схемы ещё нет ---
         if not schema_exists_before:
             if not self.update_mode:
@@ -206,26 +203,42 @@ class SchemaShot:
             self.logger.info(f"New schema `{name}` has been created.")
             GLOBAL_STATS.add_created(schema_path.name)  # статистика «создана»
             return name, None
+        else:
+            with open(schema_path, "r", encoding="utf-8") as f:
+                existing_schema = json.load(f)
 
-        # --- схема уже была: сравнение и валидация --------------------------------
-        existing_schema = old_schema
-        schema_updated = False
+            # --- схема уже была: сравнение и валидация --------------------------------
+            schema_updated = False
 
-        if existing_schema != current_schema:  # есть отличия
-            differences = self.differ.compare(existing_schema, current_schema).render()
+            if existing_schema != current_schema:  # есть отличия
+                differences = self.differ.compare(
+                    dict(existing_schema), current_schema
+                ).render()
 
-            if self.update_mode:
-                GLOBAL_STATS.add_updated(schema_path.name, differences)
+                if self.update_mode:
+                    GLOBAL_STATS.add_updated(schema_path.name, differences)
 
-                # обновляем файл
-                with open(schema_path, "w", encoding="utf-8") as f:
-                    json.dump(current_schema, f, indent=2, ensure_ascii=False)
-                self.logger.warning(f"Schema `{name}` updated.\n\n{differences}")
-                schema_updated = True
+                    # обновляем файл
+                    with open(schema_path, "w", encoding="utf-8") as f:
+                        json.dump(current_schema, f, indent=2, ensure_ascii=False)
+                    self.logger.warning(f"Schema `{name}` updated.\n\n{differences}")
+                    schema_updated = True
+                elif data is not None:
+                    GLOBAL_STATS.add_uncommitted(schema_path.name, differences)
+
+                    # только валидируем по старой схеме
+                    try:
+                        validate(
+                            instance=data,
+                            schema=existing_schema,
+                            format_checker=FormatChecker(),
+                        )
+                    except ValidationError as e:
+                        pytest.fail(
+                            f"\n\n{differences}\n\nValidation error in `{name}`: {e.message}"
+                        )
             elif data is not None:
-                GLOBAL_STATS.add_uncommitted(schema_path.name, differences)
-
-                # только валидируем по старой схеме
+                # схемы совпали – всё равно валидируем на случай формальных ошибок
                 try:
                     validate(
                         instance=data,
@@ -233,21 +246,11 @@ class SchemaShot:
                         format_checker=FormatChecker(),
                     )
                 except ValidationError as e:
+                    differences = self.differ.compare(
+                        dict(existing_schema), current_schema
+                    ).render()
                     pytest.fail(
                         f"\n\n{differences}\n\nValidation error in `{name}`: {e.message}"
                     )
-        elif data is not None:
-            # схемы совпали – всё равно валидируем на случай формальных ошибок
-            try:
-                validate(
-                    instance=data,
-                    schema=existing_schema,
-                    format_checker=FormatChecker(),
-                )
-            except ValidationError as e:
-                differences = JsonSchemaDiff.diff(existing_schema, current_schema)
-                pytest.fail(
-                    f"\n\n{differences}\n\nValidation error in `{name}`: {e.message}"
-                )
 
-        return name, schema_updated
+            return name, schema_updated

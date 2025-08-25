@@ -67,9 +67,9 @@ def test_str_representation():
 
     summary = str(s)
 
-    assert "Созданные схемы (1): `a.schema.json`" in summary
-    assert "Обновленные схемы (1): `b.schema.json`" in summary
-    assert "Неиспользуемые схемы" in summary
+    assert "Created schemas (1): `a.schema.json`" in summary
+    assert "Updated schemas (1): `b.schema.json`" in summary
+    assert "Unused schemas (1): `c.schema.json`" in summary
 
 
 def test_print_summary_merging_and_output():

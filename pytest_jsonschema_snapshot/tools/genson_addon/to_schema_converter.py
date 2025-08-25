@@ -4,7 +4,7 @@ Module for advanced JSON Schema generation with format detection support.
 
 from typing import Any, Dict, Optional
 
-from genson import SchemaBuilder
+from genson import SchemaBuilder  # type: ignore[import-untyped]
 
 from .format_detector import FormatDetector
 

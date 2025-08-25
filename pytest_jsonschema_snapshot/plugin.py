@@ -11,7 +11,7 @@ from jsonschema_diff.color.stages import (
 )
 
 from .core import SchemaShot
-from .stats import SchemaStats
+from .stats import GLOBAL_STATS, SchemaStats
 
 # Global storage of SchemaShot instances for different directories
 _schema_managers: Dict[Path, SchemaShot] = {}
@@ -108,7 +108,6 @@ def pytest_terminal_summary(terminalreporter, exitstatus: int) -> None:
     """
     Adds a summary about schemas to the final pytest report in the terminal.
     """
-
     # Выполняем cleanup перед показом summary
     if _schema_managers:
         update_mode = bool(terminalreporter.config.getoption("--schema-update"))
