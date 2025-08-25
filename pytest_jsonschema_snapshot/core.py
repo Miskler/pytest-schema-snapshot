@@ -5,7 +5,7 @@ Core logic of the plugin.
 import json
 import logging
 from pathlib import Path
-from typing import TYPE_CHECKING, Callable, Iterable, Optional, Set
+from typing import TYPE_CHECKING, Any, Callable, Optional, Set
 
 import pathvalidate
 
@@ -98,6 +98,31 @@ class SchemaShot:
 
         return name
 
+    def _save_process_original(
+        self, real_name: str, status: Optional[bool], data: dict
+    ) -> None:
+        json_name = f"{real_name}.json"
+        json_path = self.snapshot_dir / json_name
+
+        if self.save_original:
+            available_to_create = not json_path.exists() or status is None
+            available_to_update = status is True
+
+            if available_to_create or available_to_update:
+                with open(json_path, "w", encoding="utf-8") as f:
+                    json.dump(data, f, indent=2, ensure_ascii=False)
+
+                if available_to_create:
+                    GLOBAL_STATS.add_created(json_name)
+                elif available_to_update:
+                    GLOBAL_STATS.add_updated(json_name)
+                else:
+                    raise ValueError(f"Unexpected status: {status}")
+        elif json_path.exists():
+            # удаляем
+            json_path.unlink()
+            GLOBAL_STATS.add_deleted(json_name)
+
     def assert_json_match(
         self,
         data: dict,
@@ -121,34 +146,16 @@ class SchemaShot:
         real_name, status = self._base_match(data, current_schema, real_name)
 
         if self.update_mode:
-            json_name = f"{real_name}.json"
-            json_path = self.snapshot_dir / json_name
-
-            if self.save_original:
-                available_to_create = not json_path.exists() or status is None
-                available_to_update = status is True
-
-                if available_to_create or available_to_update:
-                    with open(json_path, "w", encoding="utf-8") as f:
-                        json.dump(data, f, indent=2, ensure_ascii=False)
-
-                    if available_to_create:
-                        GLOBAL_STATS.add_created(json_name)
-                    elif available_to_update:
-                        GLOBAL_STATS.add_updated(json_name)
-                    else:
-                        raise ValueError(f"Unexpected status: {status}")
-            elif json_path.exists():
-                # удаляем
-                json_path.unlink()
-                GLOBAL_STATS.add_deleted(json_name)
+            self._save_process_original(real_name=real_name, status=status, data=data)
 
         return status
 
     def assert_schema_match(
         self,
-        schema: dict,
+        schema: dict[str, Any],
         name: str | int | Callable | list[str | int | Callable],
+        *,
+        data: Optional[dict] = None,
     ) -> Optional[bool]:
         """
         Accepts a JSON-schema directly and compares it immediately.
@@ -161,7 +168,12 @@ class SchemaShot:
 
         real_name = self._process_name(name)
 
-        return self._base_match(None, schema, real_name)[1]
+        real_name, status = self._base_match(data, schema, real_name)
+
+        if self.update_mode and data is not None:
+            self._save_process_original(real_name=real_name, status=status, data=data)
+
+        return status
 
     def _base_match(
         self,

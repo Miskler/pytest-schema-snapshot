@@ -1,8 +1,9 @@
 import pytest
+from pytest_jsonschema_snapshot import SchemaShot
 
 
 @pytest.mark.asyncio
-async def test_something(schemashot):
+async def test_something(schemashot: SchemaShot):
     data = {
         "обязательная": "строка",
         "необязательная": None,
