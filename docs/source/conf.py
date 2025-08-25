@@ -16,7 +16,9 @@ sys.path.insert(0, str(ROOT))                       # import project without ins
 project   = "pytest-jsonschema-snapshot"
 author    = "Miskler"
 copyright = "2025, Miskler"
-release   = "0.1.0"
+from pytest_jsonschema_snapshot import __version__
+release   = __version__
+
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Extensions

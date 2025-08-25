@@ -6,14 +6,13 @@ build-backend = "hatchling.build"
 name = "pytest-jsonschema-snapshot"
 dynamic = ["version"]
 description = "Pytest plugin for automatic JSON Schema generation and validation from examples"
-readme = "README.md"
-readme-content-type = "text/markdown"
+readme = { file = "README.md", content-type = "text/markdown" }
 requires-python = ">=3.10"
 authors = [
   { name = "Miskler" }
 ]
 license = { text = "MIT" }
-keywords = ["pytest", "json", "schema", "validation", "genson", "click"]
+keywords = ["pytest", "json", "schema", "validation", "genson", "rich"]
 classifiers = [
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3.10",
@@ -28,12 +27,34 @@ classifiers = [
   "Topic :: Utilities"
 ]
 dependencies = [
-  "click",
   "genson",
+  "pathvalidate",
   "jsonschema",
+  "jsonschema-diff",
   "pytest"
 ]
-urls = { Homepage = "https://github.com/Open-Inflation/pytest-jsonschema-snapshot" }
+
+[project.optional-dependencies]
+dev = [
+  "pytest-cov",
+  "pytest-xdist",
+  "black",
+  "isort",
+  "mypy",
+  "flake8",
+
+  "sphinx",
+  "sphinx-autoapi",
+  "furo",
+  "docutils",
+  "types-docutils"
+]
+
+[project.urls]
+Homepage = "https://github.com/Miskler/j"
+Repository = "https://github.com/Miskler/jsonschema-diff"
+Documentation = "https://miskler.github.io/jsonschema-diff/basic/quick_start/index.html"
+Issues = "https://github.com/Miskler/jsonschema-diff/issues"
 
 [project.entry-points."pytest11"]
 schemashot = "pytest_jsonschema_snapshot.plugin"
