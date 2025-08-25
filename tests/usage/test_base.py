@@ -1,4 +1,5 @@
 import pytest
+
 from pytest_jsonschema_snapshot import SchemaShot
 
 

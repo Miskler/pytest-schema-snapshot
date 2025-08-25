@@ -4,6 +4,7 @@ jsonschema
 jsonschema-diff
 pytest
 
+pytest-asyncio
 pytest-cov
 pytest-xdist
 black
