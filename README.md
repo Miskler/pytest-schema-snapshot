@@ -5,7 +5,7 @@
 
 <img src="https://raw.githubusercontent.com/Miskler/pytest-jsonschema-snapshot/refs/heads/main/assets/logo.png" width="70%" alt="logo.png" />
 
-*A powerful, intelligent library for comparing JSON schemas with **beautiful formatted output**, **smart parameter combination**, and **contextual information**.*
+***Plugin for pytest that automatically / manually generates JSON Schemas tests with validates data.***
 
 [![Tests](https://miskler.github.io/pytest-jsonschema-snapshot/tests-badge.svg)](https://miskler.github.io/pytest-jsonschema-snapshot/tests/tests-report.html)
 [![Coverage](https://miskler.github.io/pytest-jsonschema-snapshot/coverage.svg)](https://miskler.github.io/pytest-jsonschema-snapshot/coverage/)
@@ -24,174 +24,129 @@
 
 </div>
 
-
-
-
 **Plugin for pytest that automatically generates JSON Schemas based on data examples and validates data against saved schemas.**
-
-**Плагин для pytest, который автоматически генерирует JSON Schema на основе примеров данных и проверяет данные по сохраненным схемам.**
 
 ![image](https://github.com/user-attachments/assets/2faa2548-5af2-4dc9-8d8d-b32db1d87be8)
 
-
-## Features
-
 * Automatic JSON Schema generation from data examples (using the `genson` library).
-
-  Автоматическая генерация JSON Schema по примерам данных (на основе библиотеки `genson`).
 * **Format detection**: Automatic detection and validation of string formats (email, UUID, date, date-time, URI, IPv4).
-
-  **Обнаружение форматов**: Автоматическое обнаружение и валидация форматов строк (email, UUID, date, date-time, URI, IPv4).
 * Schema storage and management.
-
-  Хранение и управление схемами.
 * Validation of data against saved schemas.
-
-  Валидация данных по сохраненным схемам.
 * Schema update via `--schema-update` (create new schemas, remove unused ones, update existing).
-
-  Обновление схем через `--schema-update` (создание новых, удаление неиспользуемых, обновление существующих).
 * Support for both `async` and synchronous functions.
-
-  Поддержка асинхронных (`async`) и синхронных функций.
 * Support for `Union` types and optional fields.
+* Built-in diff comparison of changes via [jsonschema-diff](https://github.com/Miskler/jsonschema-diff).
 
-  Поддержка `Union` типов и опциональных полей.
-* Built-in diff comparison of changes
+<div align="center">
 
-  Встроенный diff сравнения изменений:
-  ```diff
-  - ["complex_structure"]["mail"].format: "email"
+## 🚀 Quick Start
 
-  r ["complex_structure"]["age"].type:
-  -   [
-  -     "integer",
-  -     "number"
-  -   ]
-  +   "number"
-  
-  - ["multitype_array"]: {"key": {"type": "string"}}
-  
-  - ["multitype_array"].type: "object"
-  
-  - ["multitype_array"].required:
-  -    "ключ"
+</div>
 
-  + ["multitype_array"].anyOf:
-  +    {"type": ["null", "string"]},
-  +    {"type": "object", "properties": {"key": {"type": "string"}}, "required": ["key"]}
-  ```
-
-## Installation
+### Installation
 
 ```bash
-pip install pytest-typed-schema-shot
+pip install pytest-jsonschema-snapshot
 ```
 
-## Usage
+### Usage
 
 1. Use the `schemashot` fixture in your tests
+  ```python
+  from you_lib import API
+  from typed_schema_shot import SchemaShot
 
-    В тестах используйте фикстуру `schemashot`:
+  @pytest.mark.asyncio
+  async def test_something(schemashot: SchemaShot):
+      data = await API.get_data()
+      # There are data - need to validate through the schema
+      schemashot.assert_json_match(
+          data, # data for validation / convert to schema
+          "test_name"       # name of the schema
+      )
 
-   ```python
-   from typed_schema_shot import SchemaShot
-
-   @pytest.mark.asyncio
-   async def test_something(schemashot: SchemaShot):
-       data = await API.data()
-       schemashot.assert_match(data, "data")
-   ```
+      schema = await API.get_schema()
+      # There is a schema (data is optional) - validate by what is
+      schemashot.assert_schema_match(
+          schema,
+          (API.get_schema, "test_name", 1) # == `API.get_schema.test_name.1` filename
+          data=data # data for validation (optional)
+      )
+  ```
 
 2. On first run, generate schemas with the `--schema-update` flag
-
-    При первом запуске создайте схемы `--schema-update`:
-
    ```bash
-   pytest --schema-update
+   pytest --schema-update --save-original
    ```
 
+   **--save-original**: save the original data on which the validation was performed. Saving occurs when `--schema-update`, if you run the schema update without this attribute, the old original data will be deleted without saving new ones.
+
 3. On subsequent runs, tests will validate data against saved schemas
-
-    В последующих запусках тесты будут проверять данные по сохраненным схемам:
-
    ```bash
    pytest
    ```
 
-## Key Capabilities
+<div align="center">
+
+## 👀 Key Capabilities
+
+</div>
 
 * **Union Types**: support multiple possible types for fields
-
-    Поддержка множественных типов полей.
 * **Optional Fields**: automatic detection of required and optional fields
-
-    Автоматическое определение обязательных и необязательных полей.
 * **Format Detection**: automatic detection of string formats including:
-  - **Email**: `user@example.com` → `{"type": "string", "format": "email"}`
-  - **UUID**: `550e8400-e29b-41d4-a716-446655440000` → `{"type": "string", "format": "uuid"}`
-  - **Date**: `2023-01-15` → `{"type": "string", "format": "date"}`
-  - **Date-Time**: `2023-01-01T12:00:00Z` → `{"type": "string", "format": "date-time"}`
-  - **URI**: `https://example.com` → `{"type": "string", "format": "uri"}`
-  - **IPv4**: `192.168.1.1` → `{"type": "string", "format": "ipv4"}`
 
-    **Обнаружение форматов**: автоматическое определение форматов строк с поддержкой валидации.
+  | Format | Example | JSON Schema |
+  | --- | --- | --- |
+  | Email | `user@example.com` | `{"format": "email"}` |
+  | UUID | `550e8400-e29b-41d4-a716-446655440000` | `{"format": "uuid"}` |
+  | Date | `2023-01-15` | `{"format": "date"}` |
+  | Date-Time | `2023-01-01T12:00:00Z` | `{"format": "date-time"}` |
+  | URI | `https://example.com` | `{"format": "uri"}` |
+  | IPv4 | `192.168.1.1` | `{"format": "ipv4"}` |
 * **Cleanup**: automatic removal of unused schemas when running in update mode
-
-    Автоматическое удаление неиспользуемых схем в режиме обновления.
 * **Schema Summary**: colored terminal output showing created, updated, deleted and unused schemas
 
-    Цветной вывод в терминале с информацией о созданных, обновленных, удаленных и неиспользуемых схемах.
-
-## Advanced Usage
-
-### Configuration Options
-
-The plugin supports the following pytest options:
-- `--schema-update`: Enable schema update mode (create new, update existing, delete unused schemas)
-
-You can also configure the plugin via `pytest.ini`:
-
-```ini
-[tool:pytest]
-# Custom directory for storing schemas (default: __snapshots__)
-schema_shot_dir = schema_files
-```
-
-Or in `pyproject.toml`:
-
-```toml
-[tool.pytest.ini_options]
-schema_shot_dir = "schema_files"
-```
-
-### Schema Summary
-
-The plugin automatically shows a summary at the end of test execution:
-
-```
-======== Schema Summary ========
-Created schemas (1):
-  - new_api_schema.schema.json
-Updated schemas (1):  
-  - user_profile.schema.json
-Unused schemas (2):
-  - old_feature.schema.json
-  - deprecated_api.schema.json
-Use --schema-update to delete unused schemas
-```
+## Advanced Usage? Check the [docs](https://miskler.github.io/pytest-jsonschema-snapshot/basic/quick_start.html#then-you-need-to-configure-the-library)!
 
 ### Best Practices
 
 1. **Commit schemas to version control**: Schemas should be part of your repository
-2. **Review schema changes**: When schemas change, review the diffs carefully
+2. **Review schema changes**: When schemas change, review the diffs carefully without `--schema-update` resets.
 3. **Clean up regularly**: Use `--schema-update` periodically to remove unused schemas
 4. **Descriptive names**: Use clear, descriptive names for your schemas
 
-### Troubleshooting
 
-**Schema not found error**: Run tests with `--schema-update` to create missing schemas
+<div align="center">
 
-**Validation errors**: Check if your data structure has changed and update schemas accordingly
+## 🤝 Contributing
 
-**Permission errors**: Ensure your test directory is writable
+### ***We welcome contributions!***
+
+### Quick Contribution Setup
+
+</div>
+
+```bash
+# Fork the repo, then:
+git clone https://github.com/Miskler/pytest-jsonschema-snapshot.git
+cd jsonschema-diff
+# Install
+make reinstall
+# Ensure everything works
+make test
+make lint
+make type-check
+# After code editing
+make format
+```
+
+<div align="center">
+
+## 📄 License
+
+MIT License - see [LICENSE](LICENSE) file for details.
+
+*Made with ❤️ for developers working with evolving JSON schemas*
+
+</div>
