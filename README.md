@@ -24,8 +24,6 @@
 
 </div>
 
-**Plugin for pytest that automatically generates JSON Schemas based on data examples and validates data against saved schemas.**
-
 ![image](https://github.com/user-attachments/assets/2faa2548-5af2-4dc9-8d8d-b32db1d87be8)
 
 * Automatic JSON Schema generation from data examples (using the `genson` library).
