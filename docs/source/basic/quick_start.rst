@@ -80,16 +80,16 @@ Run
 
 .. code-block:: console
 
-    pytest --pss-debug --save-original --schema-update
+    pytest --jsss-debug --save-original --schema-update
 
-* **--pss-debug**: by default, the library hides its part of the call stack when raising. This is convenient for debugging your tests, but if the problem is in PJSSS itself - you can pass.
+* **--jsss-debug**: by default, the library hides its part of the call stack when raising. This is convenient for debugging your tests, but if the problem is in PJSSS itself - you can pass.
 * **--save-original**: save the original data on which the validation was performed. Saving occurs when `--schema-update`, if you run the schema update without this attribute, the old original data will be deleted without saving new ones.
 * **--schema-update**: update the schema - without this attribute, the library will only report changes in the schemas and fail the tests, with it, the tests (and the originals, if requested) will be updated.
 
 
 .. code-block:: console
 
-    (.venv) miskler@MBook:~/pjsss$ pytest --pss-debug --save-original --schema-update
+    (.venv) miskler@MBook:~/pjsss$ pytest --jsss-debug --save-original --schema-update
     ...........................................                                                                                                                            [100%]
     ============== Schema Summary ==============
     Created schemas (6):

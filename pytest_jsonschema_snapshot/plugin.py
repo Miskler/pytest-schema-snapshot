@@ -30,7 +30,7 @@ def pytest_addoption(parser: pytest.Parser) -> None:
         help="Save original JSON alongside schema (same name, but without `.schema` prefix)",
     )
     parser.addoption(
-        "--pss-debug",
+        "--jsss-debug",
         action="store_true",
         help="Show internal exception stack (stops hiding them)",
     )
@@ -58,7 +58,7 @@ def schemashot(request: pytest.FixtureRequest) -> Generator[SchemaShot, None, No
     root_dir = test_path.parent
     update_mode = bool(request.config.getoption("--schema-update"))
     save_original = bool(request.config.getoption("--save-original"))
-    debug_mode = bool(request.config.getoption("--pss-debug"))
+    debug_mode = bool(request.config.getoption("--jsss-debug"))
 
     # Получаем настраиваемую директорию для схем
     schema_dir_name = str(request.config.getini("jsss_dir"))
