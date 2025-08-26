@@ -59,6 +59,9 @@ build-install:
 	$(MAKE) build
 	$(MAKE) install
 
+reinstall:
+	./reinstall_plugin.sh
+
 docs:
 	cd docs && sphinx-build -b html source _build/html
 

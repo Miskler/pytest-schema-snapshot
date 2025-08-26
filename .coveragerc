@@ -1,4 +1,0 @@
-[run]
-# Указываем, какие каталоги считаются «своим» кодом
-source =
-    pytest_jsonschema_snapshot
