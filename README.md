@@ -1,11 +1,31 @@
-# pytest: Typed Schema Shot
 
-![PyPI - Python Version](https://img.shields.io/pypi/pyversions/pytest-typed-schema-shot)
-![PyPI - Package Version](https://img.shields.io/pypi/v/pytest-typed-schema-shot?color=blue)
-[![Tests](https://github.com/Open-Inflation/pytest-typed-schema-shot/actions/workflows/ci.yml/badge.svg)](https://github.com/Open-Inflation/pytest-typed-schema-shot/actions/workflows/ci.yml)
-[![PyPI - Downloads](https://img.shields.io/pypi/dm/pytest-typed-schema-shot?label=PyPi%20downloads)](https://pypi.org/project/pytest-typed-schema-shot/)
+<div align="center">
+
+# 🔍 Pytest JsonSchema SnapShot (JSSS)
+
+<img src="https://raw.githubusercontent.com/Miskler/pytest-jsonschema-snapshot/refs/heads/main/assets/logo.png" width="70%" alt="logo.png" />
+
+*A powerful, intelligent library for comparing JSON schemas with **beautiful formatted output**, **smart parameter combination**, and **contextual information**.*
+
+[![Tests](https://miskler.github.io/pytest-jsonschema-snapshot/tests-badge.svg)](https://miskler.github.io/pytest-jsonschema-snapshot/tests/tests-report.html)
+[![Coverage](https://miskler.github.io/pytest-jsonschema-snapshot/coverage.svg)](https://miskler.github.io/pytest-jsonschema-snapshot/coverage/)
+[![Python](https://img.shields.io/badge/python-3.10+-blue)](https://python.org)
+[![PyPI - Package Version](https://img.shields.io/pypi/v/pytest-jsonschema-snapshot?color=blue)](https://pypi.org/project/pytest-jsonschema-snapshot/)
+[![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+[![BlackCode](https://img.shields.io/badge/code%20style-black-black)](https://github.com/psf/black)
+[![mypy](https://img.shields.io/badge/type--checked-mypy-blue?logo=python)](https://mypy.readthedocs.io/en/stable/index.html)
 [![Discord](https://img.shields.io/discord/792572437292253224?label=Discord&labelColor=%232c2f33&color=%237289da)](https://discord.gg/UnJnGHNbBp)
 [![Telegram](https://img.shields.io/badge/Telegram-24A1DE)](https://t.me/miskler_dev)
+
+
+**[⭐ Star us on GitHub](https://github.com/Miskler/pytest-jsonschema-snapshot)** | **[📚 Read the Docs](https://miskler.github.io/pytest-jsonschema-snapshot/basic/quick_start.html)** | **[🐛 Report Bug](https://github.com/Miskler/pytest-jsonschema-snapshot/issues)**
+
+## ✨ Features
+
+</div>
+
+
+
 
 **Plugin for pytest that automatically generates JSON Schemas based on data examples and validates data against saved schemas.**
 
