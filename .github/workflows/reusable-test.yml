@@ -42,7 +42,7 @@ jobs:
       - name: Run tests
         run: |
           pytest -n auto \
-            --cov=jsonschema_diff \
+            --cov=pytest_jsonschema_snapshot \
             --cov-report=xml \
             --cov-report=html \
             --cov-report=term \
