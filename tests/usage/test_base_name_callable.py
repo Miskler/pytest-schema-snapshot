@@ -42,6 +42,4 @@ async def test_tuple_base(schemashot):
 
 @pytest.mark.asyncio
 async def test_tuple_with_class_base(schemashot):
-    schemashot.assert_json_match(
-        TestDataClass.get_data(), (TestDataClass.get_data, "first")
-    )
+    schemashot.assert_json_match(TestDataClass.get_data(), (TestDataClass.get_data, "first"))

@@ -54,9 +54,7 @@ def schemashot(request: pytest.FixtureRequest) -> Generator[SchemaShot, None, No
     """
 
     # Получаем путь к тестовому файлу
-    test_path = Path(
-        request.node.path if hasattr(request.node, "path") else request.node.fspath
-    )
+    test_path = Path(request.node.path if hasattr(request.node, "path") else request.node.fspath)
     root_dir = test_path.parent
     update_mode = bool(request.config.getoption("--schema-update"))
     save_original = bool(request.config.getoption("--save-original"))
@@ -104,7 +102,7 @@ def pytest_unconfigure(config: pytest.Config) -> None:
 
 
 @pytest.hookimpl(trylast=True)
-def pytest_terminal_summary(terminalreporter, exitstatus: int) -> None:
+def pytest_terminal_summary(terminalreporter: pytest.TerminalReporter, exitstatus: int) -> None:
     """
     Adds a summary about schemas to the final pytest report in the terminal.
     """

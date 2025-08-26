@@ -8,15 +8,11 @@ class FakeTerminalReporter:
         self.lines = []
 
     # pytest передаёт разделители вида write_sep("=", "Title")
-    def write_sep(
-        self, sep: str, title: str
-    ):  # noqa: D401, D403 — параметры как в pytest
+    def write_sep(self, sep: str, title: str):  # noqa: D401, D403 — параметры как в pytest
         self.lines.append(f"{sep}{title}")
 
     # Цветные аргументы (green=True и т.д.) нам не нужны — собираем только текст
-    def write_line(
-        self, line: str, **_kwargs
-    ):  # noqa: D401, D403 — сигнатура как в pytest
+    def write_line(self, line: str, **_kwargs):  # noqa: D401, D403 — сигнатура как в pytest
         self.lines.append(line)
 
 

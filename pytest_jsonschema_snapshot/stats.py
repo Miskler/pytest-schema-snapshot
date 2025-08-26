@@ -2,7 +2,9 @@
 Module for collecting and displaying statistics about schemas.
 """
 
-from typing import Dict, List, Optional
+from typing import Dict, Generator, List, Optional
+
+import pytest
 
 
 class SchemaStats:
@@ -52,13 +54,7 @@ class SchemaStats:
 
     def has_any_info(self) -> bool:
         """Is there any information about schemas"""
-        return bool(
-            self.created
-            or self.updated
-            or self.deleted
-            or self.unused
-            or self.uncommitted
-        )
+        return bool(self.created or self.updated or self.deleted or self.unused or self.uncommitted)
 
     def __str__(self) -> str:
         parts = []
@@ -79,20 +75,19 @@ class SchemaStats:
             )
         if self.unused:
             parts.append(
-                f"Unused schemas ({len(self.unused)}): "
-                + ", ".join(f"`{s}`" for s in self.unused)
+                f"Unused schemas ({len(self.unused)}): " + ", ".join(f"`{s}`" for s in self.unused)
             )
 
         return "\n".join(parts)
 
-    def print_summary(self, terminalreporter, update_mode: bool) -> None:
+    def print_summary(self, terminalreporter: pytest.TerminalReporter, update_mode: bool) -> None:
         """
         Prints schema summary to pytest terminal output.
         Pairs of "<name>.schema.json" + "<name>.json" are merged into one line:
         "<name>.schema.json + original" (if original is present).
         """
 
-        def _iter_merged(names):
+        def _iter_merged(names: List[str]) -> Generator[tuple[str, Optional[str]]]:
             """
             Iterates over (display, schema_key):
             - display: string to display (may have " + original")
@@ -106,9 +101,7 @@ class SchemaStats:
             json_sfx = ".json"
 
             # множество баз, где имеются схемы/оригиналы
-            bases_with_schema = {
-                n[: -len(schema_sfx)] for n in names if n.endswith(schema_sfx)
-            }
+            bases_with_schema = {n[: -len(schema_sfx)] for n in names if n.endswith(schema_sfx)}
             bases_with_original = {
                 n[: -len(json_sfx)]
                 for n in names
@@ -139,17 +132,13 @@ class SchemaStats:
 
         # Created
         if self.created:
-            terminalreporter.write_line(
-                f"Created schemas ({len(self.created)}):", green=True
-            )
+            terminalreporter.write_line(f"Created schemas ({len(self.created)}):", green=True)
             for display, _key in _iter_merged(self.created):
                 terminalreporter.write_line(f"  - {display}", green=True)
 
         # Updated
         if self.updated:
-            terminalreporter.write_line(
-                f"Updated schemas ({len(self.updated)}):", yellow=True
-            )
+            terminalreporter.write_line(f"Updated schemas ({len(self.updated)}):", yellow=True)
             for display, key in _iter_merged(self.updated):
                 terminalreporter.write_line(f"  - {display}", yellow=True)
                 # Показываем diff, если он есть под ключом схемы (.schema.json)
@@ -177,15 +166,11 @@ class SchemaStats:
                         if line.strip():
                             terminalreporter.write_line(f"      {line}")
                     terminalreporter.write_line("")  # разделение
-            terminalreporter.write_line(
-                "Use --schema-update to commit these changes", cyan=True
-            )
+            terminalreporter.write_line("Use --schema-update to commit these changes", cyan=True)
 
         # Deleted
         if self.deleted:
-            terminalreporter.write_line(
-                f"Deleted schemas ({len(self.deleted)}):", red=True
-            )
+            terminalreporter.write_line(f"Deleted schemas ({len(self.deleted)}):", red=True)
             for display, _key in _iter_merged(self.deleted):
                 terminalreporter.write_line(f"  - {display}", red=True)
 
@@ -194,9 +179,7 @@ class SchemaStats:
             terminalreporter.write_line(f"Unused schemas ({len(self.unused)}):")
             for display, _key in _iter_merged(self.unused):
                 terminalreporter.write_line(f"  - {display}")
-            terminalreporter.write_line(
-                "Use --schema-update to delete unused schemas", yellow=True
-            )
+            terminalreporter.write_line("Use --schema-update to delete unused schemas", yellow=True)
 
 
 GLOBAL_STATS = SchemaStats()

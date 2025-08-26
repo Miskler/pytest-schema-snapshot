@@ -59,9 +59,7 @@ class SchemaShot:
         if not self.snapshot_dir.exists():
             self.snapshot_dir.mkdir(parents=True)
 
-    def _process_name(
-        self, name: str | int | Callable | list[str | int | Callable]
-    ) -> str:
+    def _process_name(self, name: str | int | Callable | list[str | int | Callable]) -> str:
         """
         1. Converts callable to string
         2. Checks for validity
@@ -98,9 +96,7 @@ class SchemaShot:
 
         return name
 
-    def _save_process_original(
-        self, real_name: str, status: Optional[bool], data: dict
-    ) -> None:
+    def _save_process_original(self, real_name: str, status: Optional[bool], data: dict) -> None:
         json_name = f"{real_name}.json"
         json_path = self.snapshot_dir / json_name
 
@@ -223,9 +219,7 @@ class SchemaShot:
             schema_updated = False
 
             if existing_schema != current_schema:  # есть отличия
-                differences = self.differ.compare(
-                    dict(existing_schema), current_schema
-                ).render()
+                differences = self.differ.compare(dict(existing_schema), current_schema).render()
 
                 if self.update_mode:
                     GLOBAL_STATS.add_updated(schema_path.name, differences)
@@ -261,8 +255,6 @@ class SchemaShot:
                     differences = self.differ.compare(
                         dict(existing_schema), current_schema
                     ).render()
-                    pytest.fail(
-                        f"\n\n{differences}\n\nValidation error in `{name}`: {e.message}"
-                    )
+                    pytest.fail(f"\n\n{differences}\n\nValidation error in `{name}`: {e.message}")
 
             return name, schema_updated

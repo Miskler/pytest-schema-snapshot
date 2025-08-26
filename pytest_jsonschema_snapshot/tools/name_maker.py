@@ -61,9 +61,7 @@ class NameMaker:
         def _sub(match: re.Match[str]) -> str:  # noqa: N802
             token: str | None = match.group(1)
             name: str = token.split("=", 1)[0] if token else ""
-            joiner: str | None = (
-                token.split("=", 1)[1] if token and "=" in token else None
-            )
+            joiner: str | None = token.split("=", 1)[1] if token and "=" in token else None
             return NameMaker._expand(name, joiner, meta)
 
         out = NameMaker._RE_PLHDR.sub(_sub, rule)
@@ -76,10 +74,10 @@ class NameMaker:
         """Strip functools.partial and @functools.wraps wrappers."""
         while True:
             if isinstance(obj, partial):
-                obj = obj.func  # type: ignore[assignment]
+                obj = obj.func
                 continue
             if hasattr(obj, "__wrapped__"):
-                obj = obj.__wrapped__  # type: ignore[attr-defined,assignment]
+                obj = obj.__wrapped__
                 continue
             break
         return obj

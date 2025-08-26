@@ -12,8 +12,8 @@ from .format_detector import FormatDetector
 class FormatAwareString:
     """Strategy for strings with format detection"""
 
-    def __init__(self):
-        self.formats = set()
+    def __init__(self) -> None:
+        self.formats: set = set()
 
     def match_schema(self, obj: Any) -> bool:
         """Checks if the object matches this strategy"""
@@ -83,10 +83,10 @@ class JsonToSchemaConverter(SchemaBuilder):
             for i, item in enumerate(obj):
                 self._process_formats(item, f"{path}[{i}]")
 
-    def to_schema(self) -> Dict[str, Any]:
+    def to_schema(self) -> Dict:
         """Generates the schema with format detection"""
         # Get the base schema
-        schema = super().to_schema()
+        schema = dict(super().to_schema())
 
         # Add the formats
         self._add_formats_to_schema(schema, "root")
