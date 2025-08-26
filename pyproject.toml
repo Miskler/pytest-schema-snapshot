@@ -53,10 +53,10 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/Miskler/j"
-Repository = "https://github.com/Miskler/jsonschema-diff"
-Documentation = "https://miskler.github.io/jsonschema-diff/basic/quick_start/index.html"
-Issues = "https://github.com/Miskler/jsonschema-diff/issues"
+Homepage = "https://miskler.github.io/pytest-jsonschema-snapshot/basic/quick_start.html"
+Repository = "https://github.com/Miskler/pytest-jsonschema-snapshot"
+Documentation = "https://miskler.github.io/pytest-jsonschema-snapshot/basic/quick_start.html"
+Issues = "https://github.com/Miskler/pytest-jsonschema-snapshot/issues"
 
 [project.entry-points."pytest11"]
 schemashot = "pytest_jsonschema_snapshot.plugin"
