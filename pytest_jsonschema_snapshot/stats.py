@@ -87,7 +87,7 @@ class SchemaStats:
         "<name>.schema.json + original" (if original is present).
         """
 
-        def _iter_merged(names: List[str]) -> Generator[tuple[str, Optional[str]]]:
+        def _iter_merged(names: List[str]) -> Generator[tuple[str, Optional[str]], None, None]:
             """
             Iterates over (display, schema_key):
             - display: string to display (may have " + original")
