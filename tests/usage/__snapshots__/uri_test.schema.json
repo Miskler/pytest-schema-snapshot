@@ -1,18 +1,30 @@
 {
-  "$schema": "http://json-schema.org/schema#",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
   "type": "object",
   "properties": {
     "website": {
       "type": "string",
-      "format": "uri"
+      "format": "uri",
+      "examples": [
+        "https://example.com"
+      ]
     },
     "api_endpoint": {
       "type": "string",
-      "format": "uri"
+      "format": "uri",
+      "examples": [
+        "http://api.example.com/v1/users"
+      ]
     }
   },
   "required": [
     "api_endpoint",
     "website"
+  ],
+  "examples": [
+    {
+      "website": "https://example.com",
+      "api_endpoint": "http://api.example.com/v1/users"
+    }
   ]
 }

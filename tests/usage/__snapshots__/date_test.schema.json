@@ -1,18 +1,30 @@
 {
-  "$schema": "http://json-schema.org/schema#",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
   "type": "object",
   "properties": {
     "birth_date": {
       "type": "string",
-      "format": "date"
+      "format": "date",
+      "examples": [
+        "1990-01-15"
+      ]
     },
     "registration_date": {
       "type": "string",
-      "format": "date"
+      "format": "date",
+      "examples": [
+        "2023-12-01"
+      ]
     }
   },
   "required": [
     "birth_date",
     "registration_date"
+  ],
+  "examples": [
+    {
+      "birth_date": "1990-01-15",
+      "registration_date": "2023-12-01"
+    }
   ]
 }

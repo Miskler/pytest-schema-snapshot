@@ -35,7 +35,7 @@ class JsonToSchemaConverter(SchemaBuilder):
 
     def __init__(
         self,
-        schema_uri: Optional[str] = None,
+        schema_uri: Optional[str] = "https://json-schema.org/draft/2020-12/schema",
         *,
         format: FormatMode = "on",
         examples: int = 0,

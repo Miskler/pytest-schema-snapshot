@@ -1,18 +1,30 @@
 {
-  "$schema": "http://json-schema.org/schema#",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
   "type": "object",
   "properties": {
     "server_ip": {
       "type": "string",
-      "format": "ipv4"
+      "format": "ipv4",
+      "examples": [
+        "192.168.1.1"
+      ]
     },
     "gateway": {
       "type": "string",
-      "format": "ipv4"
+      "format": "ipv4",
+      "examples": [
+        "10.0.0.1"
+      ]
     }
   },
   "required": [
     "gateway",
     "server_ip"
+  ],
+  "examples": [
+    {
+      "server_ip": "192.168.1.1",
+      "gateway": "10.0.0.1"
+    }
   ]
 }

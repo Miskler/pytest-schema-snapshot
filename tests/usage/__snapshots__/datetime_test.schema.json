@@ -1,18 +1,30 @@
 {
-  "$schema": "http://json-schema.org/schema#",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
   "type": "object",
   "properties": {
     "created_at": {
       "type": "string",
-      "format": "date-time"
+      "format": "date-time",
+      "examples": [
+        "2023-01-01T12:00:00Z"
+      ]
     },
     "updated_at": {
       "type": "string",
-      "format": "date-time"
+      "format": "date-time",
+      "examples": [
+        "2023-12-01T15:30:45.123Z"
+      ]
     }
   },
   "required": [
     "created_at",
     "updated_at"
+  ],
+  "examples": [
+    {
+      "created_at": "2023-01-01T12:00:00Z",
+      "updated_at": "2023-12-01T15:30:45.123Z"
+    }
   ]
 }
