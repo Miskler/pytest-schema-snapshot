@@ -66,11 +66,11 @@ def pytest_addoption(parser: pytest.Parser) -> None:
         default="on",
         help="Format mode: 'on' (annotate and validate), 'safe' (annotate), 'off' (disable)",
     )
-    #parser.addini(
-    #    "jsss_examples_limit",
-    #    default="3",
-    #    help="Maximum number of examples to include in the schema (default: 3). Set to 0 to disable.",
-    #)
+    # parser.addini(
+    # "jsss_examples_limit",
+    # default="3",
+    # help="Maximum number of examples to include in the schema (default: 3). Set to 0 to disable.",
+    # )
 
 
 @pytest.fixture(scope="function")
@@ -96,7 +96,7 @@ def schemashot(request: pytest.FixtureRequest) -> Generator[SchemaShot, None, No
     schema_dir_name = str(request.config.getini("jsss_dir"))
     callable_regex = str(request.config.getini("jsss_callable_regex"))
     format_mode = str(request.config.getini("jsss_format_mode")).lower()
-    #examples_limit = int(request.config.getini("jsss_examples_limit"))
+    # examples_limit = int(request.config.getini("jsss_examples_limit"))
 
     differ = JsonSchemaDiff(
         ConfigMaker.make(),
@@ -112,7 +112,7 @@ def schemashot(request: pytest.FixtureRequest) -> Generator[SchemaShot, None, No
             differ,
             callable_regex,
             format_mode,
-            #examples_limit,
+            # examples_limit,
             update_mode,
             actions,
             save_original,
@@ -145,7 +145,9 @@ def pytest_terminal_summary(terminalreporter: pytest.TerminalReporter, exitstatu
     """
     # Выполняем cleanup перед показом summary
     if _schema_managers:
-        get_opt = lambda opt: bool(terminalreporter.config.getoption(opt))
+
+        def get_opt(opt: str) -> bool:
+            return bool(terminalreporter.config.getoption(opt))
 
         update_mode = get_opt("--schema-update")
 
@@ -165,7 +167,10 @@ def pytest_terminal_summary(terminalreporter: pytest.TerminalReporter, exitstatu
 
 
 def cleanup_unused_schemas(
-    manager: SchemaShot, update_mode: bool, actions: dict[str, bool], stats: Optional[SchemaStats] = None
+    manager: SchemaShot,
+    update_mode: bool,
+    actions: dict[str, bool],
+    stats: Optional[SchemaStats] = None,
 ) -> None:
     """
     Deletes unused schemas in update mode and collects statistics.

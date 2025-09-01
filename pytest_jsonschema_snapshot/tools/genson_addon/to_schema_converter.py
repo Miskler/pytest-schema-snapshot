@@ -9,7 +9,8 @@
                 This makes every ``format`` purely informational, regardless
                 of validator settings.
 """
-from typing import Any, Dict, Optional, Literal
+
+from typing import Any, Dict, Literal
 
 from genson import SchemaBuilder  # type: ignore[import-untyped]
 
@@ -24,10 +25,12 @@ class JsonToSchemaConverter(SchemaBuilder):
     # ------------------------------------------------------------------
     # Construction
     # ------------------------------------------------------------------
-    def __init__(self,
-                 schema_uri: str = "https://json-schema.org/draft/2020-12/schema",
-                 *,
-                 format_mode: _FormatMode = "on"):
+    def __init__(
+        self,
+        schema_uri: str = "https://json-schema.org/draft/2020-12/schema",
+        *,
+        format_mode: _FormatMode = "on",
+    ):
         super().__init__(schema_uri) if schema_uri else super().__init__()
         if format_mode not in {"on", "off", "safe"}:
             raise ValueError("format_mode must be 'on', 'off', or 'safe'.")
@@ -37,12 +40,12 @@ class JsonToSchemaConverter(SchemaBuilder):
     # ------------------------------------------------------------------
     # Public API (overrides)
     # ------------------------------------------------------------------
-    def add_object(self, obj: Any, path: str = "root") -> None:  # type: ignore[override]
+    def add_object(self, obj: Any, path: str = "root") -> None:
         super().add_object(obj)
         if self._format_mode != "off":
             self._collect_formats(obj, path)
 
-    def to_schema(self) -> Dict[str, Any]:  # type: ignore[override]
+    def to_schema(self) -> Dict[str, Any]:
         schema = dict(super().to_schema())  # shallow‑copy
 
         if self._format_mode != "off":

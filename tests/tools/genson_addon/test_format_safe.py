@@ -25,6 +25,7 @@ In python‑jsonschema, *format* assertions only run when a
 vocabulary.  Hence, supplying ``FormatChecker`` only in **on** mode gives
 us the desired behaviour.
 """
+
 from __future__ import annotations
 
 import jsonschema
@@ -46,9 +47,9 @@ SOURCE_INVALID = {
 }
 
 PARAMS = [
-    ("on", False, True),   # должен упасть (ValidationError)
+    ("on", False, True),  # должен упасть (ValidationError)
     ("safe", True, True),  # должен пройти
-    ("off", True, False),   # должен пройти
+    ("off", True, False),  # должен пройти
 ]
 
 
