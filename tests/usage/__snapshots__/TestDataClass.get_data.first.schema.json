@@ -1,44 +1,26 @@
 {
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$schema": "http://json-schema.org/schema#",
   "type": "object",
   "properties": {
     "обязательная": {
-      "type": "string",
-      "examples": [
-        "строка"
-      ]
+      "type": "string"
     },
     "необязательная": {
-      "type": "null",
-      "examples": [
-        null
-      ]
+      "type": "null"
     },
     "словарь": {
       "type": "object",
       "properties": {
         "ключ": {
-          "type": "string",
-          "examples": [
-            "значение"
-          ]
+          "type": "string"
         },
         "число": {
-          "type": "integer",
-          "examples": [
-            123
-          ]
+          "type": "integer"
         }
       },
       "required": [
         "ключ",
         "число"
-      ],
-      "examples": [
-        {
-          "ключ": "значение",
-          "число": 123
-        }
       ]
     }
   },
@@ -46,15 +28,5 @@
     "необязательная",
     "обязательная",
     "словарь"
-  ],
-  "examples": [
-    {
-      "обязательная": "строка",
-      "необязательная": null,
-      "словарь": {
-        "ключ": "значение",
-        "число": 123
-      }
-    }
   ]
 }

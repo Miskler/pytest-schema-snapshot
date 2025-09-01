@@ -1,48 +1,30 @@
 {
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$schema": "http://json-schema.org/schema#",
   "type": "object",
   "properties": {
     "id": {
       "type": "string",
-      "format": "uuid",
-      "examples": [
-        "550e8400-e29b-41d4-a716-446655440000"
-      ]
+      "format": "uuid"
     },
     "email": {
       "type": "string",
-      "format": "email",
-      "examples": [
-        "user@example.com"
-      ]
+      "format": "email"
     },
     "created_at": {
       "type": "string",
-      "format": "date-time",
-      "examples": [
-        "2023-01-01T12:00:00Z"
-      ]
+      "format": "date-time"
     },
     "birth_date": {
       "type": "string",
-      "format": "date",
-      "examples": [
-        "1990-01-15"
-      ]
+      "format": "date"
     },
     "website": {
       "type": "string",
-      "format": "uri",
-      "examples": [
-        "https://example.com"
-      ]
+      "format": "uri"
     },
     "ip_address": {
       "type": "string",
-      "format": "ipv4",
-      "examples": [
-        "192.168.1.100"
-      ]
+      "format": "ipv4"
     }
   },
   "required": [
@@ -52,15 +34,5 @@
     "id",
     "ip_address",
     "website"
-  ],
-  "examples": [
-    {
-      "id": "550e8400-e29b-41d4-a716-446655440000",
-      "email": "user@example.com",
-      "created_at": "2023-01-01T12:00:00Z",
-      "birth_date": "1990-01-15",
-      "website": "https://example.com",
-      "ip_address": "192.168.1.100"
-    }
   ]
 }

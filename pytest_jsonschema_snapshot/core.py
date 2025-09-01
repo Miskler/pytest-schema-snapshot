@@ -142,7 +142,7 @@ class SchemaShot:
 
         real_name = self._process_name(name)
 
-        builder = JsonToSchemaConverter(format=self.format_mode, examples=self.examples_limit)
+        builder = JsonToSchemaConverter()#format=self.format_mode, examples=self.examples_limit)
         builder.add_object(data)
         current_schema = builder.to_schema()
 

@@ -1,30 +1,18 @@
 {
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$schema": "http://json-schema.org/schema#",
   "type": "object",
   "properties": {
     "user_email": {
       "type": "string",
-      "format": "email",
-      "examples": [
-        "test@example.com"
-      ]
+      "format": "email"
     },
     "admin_email": {
       "type": "string",
-      "format": "email",
-      "examples": [
-        "admin@domain.org"
-      ]
+      "format": "email"
     }
   },
   "required": [
     "admin_email",
     "user_email"
-  ],
-  "examples": [
-    {
-      "user_email": "test@example.com",
-      "admin_email": "admin@domain.org"
-    }
   ]
 }
