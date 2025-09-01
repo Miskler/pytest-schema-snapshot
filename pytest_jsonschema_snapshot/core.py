@@ -26,7 +26,7 @@ class SchemaShot:
         differ: "JsonSchemaDiff",
         callable_regex: str = "{class_method=.}",
         format_mode: str = "on",
-        examples_limit: int = 3,
+        #examples_limit: int = 3,
         update_mode: bool = False,
         update_actions: dict[str, bool] = {},
         save_original: bool = False,
@@ -45,7 +45,7 @@ class SchemaShot:
         self.differ: "JsonSchemaDiff" = differ
         self.callable_regex: str = callable_regex
         self.format_mode: str = format_mode
-        self.examples_limit: int = examples_limit
+        #self.examples_limit: int = examples_limit
         self.update_mode: bool = update_mode
         self.update_actions: dict[str, bool] = update_actions
         self.save_original: bool = save_original
@@ -142,7 +142,7 @@ class SchemaShot:
 
         real_name = self._process_name(name)
 
-        builder = JsonToSchemaConverter()#format=self.format_mode, examples=self.examples_limit)
+        builder = JsonToSchemaConverter(format_mode=self.format_mode)#, examples=self.examples_limit)
         builder.add_object(data)
         current_schema = builder.to_schema()
 

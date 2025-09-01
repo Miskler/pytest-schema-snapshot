@@ -1,119 +1,97 @@
-"""
-Module for advanced JSON Schema generation with format detection support.
-"""
+"""Json → Schema with optional format handling.
 
-from typing import Any, Dict, Optional
+`format_mode` options
+---------------------
+* ``"on"``   – detect formats and let validators assert them (default).
+* ``"off"``  – ignore formats entirely.
+* ``"safe"`` – keep the annotations but embed a ``$vocabulary`` block that
+                **disables** the draft‑2020‑12 *format‑assertion* vocabulary.
+                This makes every ``format`` purely informational, regardless
+                of validator settings.
+"""
+from typing import Any, Dict, Optional, Literal
 
 from genson import SchemaBuilder  # type: ignore[import-untyped]
 
 from .format_detector import FormatDetector
 
-
-class FormatAwareString:
-    """Strategy for strings with format detection"""
-
-    def __init__(self) -> None:
-        self.formats: set = set()
-
-    def match_schema(self, obj: Any) -> bool:
-        """Checks if the object matches this strategy"""
-        return isinstance(obj, str)
-
-    def match_object(self, obj: Any) -> bool:
-        """Checks if the object matches this strategy"""
-        return isinstance(obj, str)
-
-    def add_object(self, obj: Any) -> None:
-        """Adds an object for analysis"""
-        if isinstance(obj, str):
-            detected_format = FormatDetector.detect_format(obj)
-            if detected_format:
-                self.formats.add(detected_format)
-
-    def to_schema(self) -> Dict[str, Any]:
-        """Generates a schema for the string"""
-        schema = {"type": "string"}
-
-        # If all strings have the same format, add it to the schema
-        if len(self.formats) == 1:
-            schema["format"] = list(self.formats)[0]
-
-        return schema
+_FormatMode = Literal["on", "off", "safe"]
 
 
 class JsonToSchemaConverter(SchemaBuilder):
-    """Extended SchemaBuilder with format detection support"""
+    """A thin wrapper around :class:`genson.SchemaBuilder`."""
 
-    def __init__(self, schema_uri: Optional[str] = None):
-        if schema_uri:
-            super().__init__(schema_uri)
-        else:
-            super().__init__()
-        self._format_cache: Dict[str, set] = {}
+    # ------------------------------------------------------------------
+    # Construction
+    # ------------------------------------------------------------------
+    def __init__(self,
+                 schema_uri: str = "https://json-schema.org/draft/2020-12/schema",
+                 *,
+                 format_mode: _FormatMode = "on"):
+        super().__init__(schema_uri) if schema_uri else super().__init__()
+        if format_mode not in {"on", "off", "safe"}:
+            raise ValueError("format_mode must be 'on', 'off', or 'safe'.")
+        self._format_mode: _FormatMode = format_mode
+        self._format_cache: Dict[str, set[str]] = {}
 
-    def add_object(self, obj: Any, path: str = "root") -> None:
-        """
-        Adds an object to the builder with format detection.
-
-        Args:
-            obj: Object to add
-            path: Path to the object (for internal use)
-        """
-        # Call the parent method first
+    # ------------------------------------------------------------------
+    # Public API (overrides)
+    # ------------------------------------------------------------------
+    def add_object(self, obj: Any, path: str = "root") -> None:  # type: ignore[override]
         super().add_object(obj)
+        if self._format_mode != "off":
+            self._collect_formats(obj, path)
 
-        # Then process the formats
-        self._process_formats(obj, path)
+    def to_schema(self) -> Dict[str, Any]:  # type: ignore[override]
+        schema = dict(super().to_schema())  # shallow‑copy
 
-    def _process_formats(self, obj: Any, path: str) -> None:
-        """Recursively processes the object for format detection"""
-        if isinstance(obj, str):
-            # Detect the format of the string
-            detected_format = FormatDetector.detect_format(obj)
-            if detected_format:
-                if path not in self._format_cache:
-                    self._format_cache[path] = set()
-                self._format_cache[path].add(detected_format)
-        elif isinstance(obj, dict):
-            # Recursively process the dictionary
-            for key, value in obj.items():
-                self._process_formats(value, f"{path}.{key}")
-        elif isinstance(obj, (list, tuple)):
-            # Recursively process the list
-            for i, item in enumerate(obj):
-                self._process_formats(item, f"{path}[{i}]")
+        if self._format_mode != "off":
+            self._inject_formats(schema, "root")
 
-    def to_schema(self) -> Dict:
-        """Generates the schema with format detection"""
-        # Get the base schema
-        schema = dict(super().to_schema())
-
-        # Add the formats
-        self._add_formats_to_schema(schema, "root")
+            if self._format_mode == "safe":
+                schema.setdefault(
+                    "$vocabulary",
+                    {
+                        "https://json-schema.org/draft/2020-12/vocab/core": True,
+                        "https://json-schema.org/draft/2020-12/vocab/applicator": True,
+                        "https://json-schema.org/draft/2020-12/vocab/format-annotation": True,
+                        "https://json-schema.org/draft/2020-12/vocab/format-assertion": False,
+                    },
+                )
 
         return schema
 
-    def _add_formats_to_schema(self, schema: Dict[str, Any], path: str) -> None:
-        """Recursively adds formats to the schema"""
-        if schema.get("type") == "string":
-            # If there is only one format for this path
-            if path in self._format_cache and len(self._format_cache[path]) == 1:
-                schema["format"] = list(self._format_cache[path])[0]
+    # ------------------------------------------------------------------
+    # Internals
+    # ------------------------------------------------------------------
+    def _collect_formats(self, obj: Any, path: str) -> None:
+        if isinstance(obj, str):
+            fmt = FormatDetector.detect_format(obj)
+            if fmt:
+                self._format_cache.setdefault(path, set()).add(fmt)
+        elif isinstance(obj, dict):
+            for k, v in obj.items():
+                self._collect_formats(v, f"{path}.{k}")
+        elif isinstance(obj, (list, tuple)):
+            for i, item in enumerate(obj):
+                self._collect_formats(item, f"{path}[{i}]")
 
-        elif schema.get("type") == "object" and "properties" in schema:
-            # Recursively process the object properties
-            for prop_name, prop_schema in schema["properties"].items():
-                self._add_formats_to_schema(prop_schema, f"{path}.{prop_name}")
-
-        elif schema.get("type") == "array" and "items" in schema:
-            # Process the array items
-            if isinstance(schema["items"], dict):
-                self._add_formats_to_schema(schema["items"], f"{path}[0]")
-            elif isinstance(schema["items"], list):
-                for i, item_schema in enumerate(schema["items"]):
-                    self._add_formats_to_schema(item_schema, f"{path}[{i}]")
-
+    def _inject_formats(self, schema: Dict[str, Any], path: str) -> None:
+        t = schema.get("type")
+        if t == "string":
+            fmts = self._format_cache.get(path)
+            if fmts and len(fmts) == 1:
+                schema["format"] = next(iter(fmts))
+        elif t == "object" and "properties" in schema:
+            for name, subschema in schema["properties"].items():
+                self._inject_formats(subschema, f"{path}.{name}")
+        elif t == "array" and "items" in schema:
+            items_schema = schema["items"]
+            if isinstance(items_schema, dict):
+                self._inject_formats(items_schema, f"{path}[0]")
+            else:
+                for idx, subschema in enumerate(items_schema):
+                    self._inject_formats(subschema, f"{path}[{idx}]")
         elif "anyOf" in schema:
-            # Process the anyOf schemas
-            for i, sub_schema in enumerate(schema["anyOf"]):
-                self._add_formats_to_schema(sub_schema, path)
+            for subschema in schema["anyOf"]:
+                self._inject_formats(subschema, path)

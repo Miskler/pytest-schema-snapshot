@@ -19,6 +19,7 @@ Choose the option that best suits your project:
     [pytest]
     jsss_dir = __snapshots__               # where to put the schemas
     jsss_callable_regex = {class_method=.} # rule for the callable part
+    jsss_format_mode = on
 
 .. code-block:: python
 
@@ -26,6 +27,7 @@ Choose the option that best suits your project:
     [tool.pytest.ini_options]
     jsss_dir = "__snapshots__"
     jsss_callable_regex = "{class_method=.}"
+    jsss_format_mode = "on"
 
 .. code-block:: ini
 
@@ -33,9 +35,11 @@ Choose the option that best suits your project:
     [tool:pytest]
     jsss_dir = __snapshots__
     jsss_callable_regex = {class_method=.}
+    jsss_format_mode = on
 
 * **jsss_dir**: the name of the folder where the library will save the schemas/originals *(always in the same directory as the test that called it)*.
 * **jsss_callable_regex**: the rule for interpreting the callable name.
+* **jsss_format_mode**: "on" (annotate and validate), "safe" (annotate), "off" (disable).
 
 Next, you can use the fixture in your tests:
 --------------------------------------------
