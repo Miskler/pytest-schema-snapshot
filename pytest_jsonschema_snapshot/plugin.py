@@ -35,6 +35,22 @@ def pytest_addoption(parser: pytest.Parser) -> None:
         help="Show internal exception stack (stops hiding them)",
     )
 
+    parser.addoption(
+        "--without-delete",
+        action="store_true",
+        help="Disable deleting unused schemas",
+    )
+    parser.addoption(
+        "--without-update",
+        action="store_true",
+        help="Disable updating schemas",
+    )
+    parser.addoption(
+        "--without-add",
+        action="store_true",
+        help="Disable adding new schemas",
+    )
+
     parser.addini(
         "jsss_dir",
         default="__snapshots__",
@@ -60,6 +76,12 @@ def schemashot(request: pytest.FixtureRequest) -> Generator[SchemaShot, None, No
     save_original = bool(request.config.getoption("--save-original"))
     debug_mode = bool(request.config.getoption("--jsss-debug"))
 
+    actions = {
+        "delete": not request.config.getoption("--without-delete"),
+        "update": not request.config.getoption("--without-update"),
+        "add": not request.config.getoption("--without-add"),
+    }
+
     # Получаем настраиваемую директорию для схем
     schema_dir_name = str(request.config.getini("jsss_dir"))
     callable_regex = str(request.config.getini("jsss_callable_regex"))
@@ -78,6 +100,7 @@ def schemashot(request: pytest.FixtureRequest) -> Generator[SchemaShot, None, No
             differ,
             callable_regex,
             update_mode,
+            actions,
             save_original,
             debug_mode,
             schema_dir_name,
@@ -108,11 +131,19 @@ def pytest_terminal_summary(terminalreporter: pytest.TerminalReporter, exitstatu
     """
     # Выполняем cleanup перед показом summary
     if _schema_managers:
-        update_mode = bool(terminalreporter.config.getoption("--schema-update"))
+        get_opt = lambda opt: bool(terminalreporter.config.getoption(opt))
+
+        update_mode = get_opt("--schema-update")
+
+        actions = {
+            "delete": not get_opt("--without-delete"),
+            "update": not get_opt("--without-update"),
+            "add": not get_opt("--without-add"),
+        }
 
         # Вызываем метод очистки неиспользованных схем для каждого экземпляра
         for _root_dir, manager in _schema_managers.items():
-            cleanup_unused_schemas(manager, update_mode, GLOBAL_STATS)
+            cleanup_unused_schemas(manager, update_mode, actions, GLOBAL_STATS)
 
     # Используем новую функцию для вывода статистики
     update_mode = bool(terminalreporter.config.getoption("--schema-update"))
@@ -120,7 +151,7 @@ def pytest_terminal_summary(terminalreporter: pytest.TerminalReporter, exitstatu
 
 
 def cleanup_unused_schemas(
-    manager: SchemaShot, update_mode: bool, stats: Optional[SchemaStats] = None
+    manager: SchemaShot, update_mode: bool, actions: dict[str, bool], stats: Optional[SchemaStats] = None
 ) -> None:
     """
     Deletes unused schemas in update mode and collects statistics.
@@ -140,7 +171,7 @@ def cleanup_unused_schemas(
 
     for schema_file in all_schemas:
         if schema_file.name not in manager.used_schemas:
-            if update_mode:
+            if update_mode and actions.get("delete"):
                 try:
                     # Удаляем саму схему
                     schema_file.unlink()

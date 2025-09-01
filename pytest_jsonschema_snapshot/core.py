@@ -26,6 +26,7 @@ class SchemaShot:
         differ: "JsonSchemaDiff",
         callable_regex: str = "{class_method=.}",
         update_mode: bool = False,
+        update_actions: dict[str, bool] = {},
         save_original: bool = False,
         debug_mode: bool = False,
         snapshot_dir_name: str = "__snapshots__",
@@ -42,6 +43,7 @@ class SchemaShot:
         self.differ: "JsonSchemaDiff" = differ
         self.callable_regex: str = callable_regex
         self.update_mode: bool = update_mode
+        self.update_actions: dict[str, bool] = update_actions
         self.save_original: bool = save_original
         self.debug_mode: bool = debug_mode
         self.snapshot_dir: Path = root_dir / snapshot_dir_name
@@ -104,7 +106,8 @@ class SchemaShot:
             available_to_create = not json_path.exists() or status is None
             available_to_update = status is True
 
-            if available_to_create or available_to_update:
+            if (available_to_create and self.update_actions.get("add")) \
+                    or (available_to_update and self.update_actions.get("update")):
                 with open(json_path, "w", encoding="utf-8") as f:
                     json.dump(data, f, indent=2, ensure_ascii=False)
 
@@ -114,7 +117,7 @@ class SchemaShot:
                     GLOBAL_STATS.add_updated(json_name)
                 else:
                     raise ValueError(f"Unexpected status: {status}")
-        elif json_path.exists():
+        elif (json_path.exists() and self.update_actions.get("delete")):
             # удаляем
             json_path.unlink()
             GLOBAL_STATS.add_deleted(json_name)
@@ -204,6 +207,10 @@ class SchemaShot:
                     f"Schema `{name}` not found."
                     "Run the test with the --schema-update option to create it."
                 )
+            elif not self.update_actions.get("add"):
+                raise pytest.fail.Exception(
+                    f"Schema `{name}` not found and adding new schemas is disabled."
+                )
 
             with open(schema_path, "w", encoding="utf-8") as f:
                 json.dump(current_schema, f, indent=2, ensure_ascii=False)
@@ -221,7 +228,7 @@ class SchemaShot:
             if existing_schema != current_schema:  # есть отличия
                 differences = self.differ.compare(dict(existing_schema), current_schema).render()
 
-                if self.update_mode:
+                if self.update_mode and self.update_actions.get("update"):
                     GLOBAL_STATS.add_updated(schema_path.name, differences)
 
                     # обновляем файл
