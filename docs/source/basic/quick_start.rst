@@ -86,6 +86,10 @@ Run
 * **--save-original**: save the original data on which the validation was performed. Saving occurs when `--schema-update`, if you run the schema update without this attribute, the old original data will be deleted without saving new ones.
 * **--schema-update**: update the schema - without this attribute, the library will only report changes in the schemas and fail the tests, with it, the tests (and the originals, if requested) will be updated.
 
+Disabling update mechanisms
+* **--without-delete**: disables deletion of old schemas
+* **--without-update**: disables updating of existing schemas
+* **--without-add**: disables adding new schemas
 
 .. code-block:: console
 
