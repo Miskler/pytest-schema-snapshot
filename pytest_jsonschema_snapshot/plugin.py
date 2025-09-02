@@ -22,7 +22,11 @@ def pytest_addoption(parser: pytest.Parser) -> None:
     parser.addoption(
         "--schema-update",
         action="store_true",
-        help="Augmenting mode for updating schemas. *If something is valid for the old schema, then it is valid for the new one (and vice versa)*.",
+        help=(
+            "Augmenting mode for updating schemas. "
+            "If something is valid for the old schema, then it is valid "
+            "for the new one (and vice versa)."
+        ),
     )
     parser.addoption(
         "--schema-reset",
@@ -82,7 +86,7 @@ def schemashot(request: pytest.FixtureRequest) -> Generator[SchemaShot, None, No
     # Получаем путь к тестовому файлу
     test_path = Path(request.node.path if hasattr(request.node, "path") else request.node.fspath)
     root_dir = test_path.parent
-    
+
     update_mode = bool(request.config.getoption("--schema-update"))
     reset_mode = bool(request.config.getoption("--schema-reset"))
     if update_mode and reset_mode:

@@ -5,7 +5,9 @@ import pytest
 
 def test_multiple_schema_creation(schemashot, pytestconfig):
     """Ensure multiple schemas can be created sequentially."""
-    if not pytestconfig.getoption("--schema-reset") and not pytestconfig.getoption("--schema-update"):
+    if not pytestconfig.getoption("--schema-reset") and not pytestconfig.getoption(
+        "--schema-update"
+    ):
         pytest.skip("requires --schema-reset or --schema-update")
 
     snapshot_dir = Path(__file__).parent / "__snapshots__"

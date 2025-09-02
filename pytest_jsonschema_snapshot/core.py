@@ -257,7 +257,9 @@ class SchemaShot:
 
                         self.logger.warning(f"Schema `{name}` updated (update).\n\n{differences}")
                     else:  # both update_mode and reset_mode are True
-                        raise ValueError("Both update_mode and reset_mode cannot be True at the same time.")
+                        raise ValueError(
+                            "Both update_mode and reset_mode cannot be True at the same time."
+                        )
                     schema_updated = True
                 elif data is not None:
                     GLOBAL_STATS.add_uncommitted(schema_path.name, differences)
