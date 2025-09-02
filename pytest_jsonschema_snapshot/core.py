@@ -234,13 +234,14 @@ class SchemaShot:
             schema_updated = False
 
             if existing_schema != current_schema:  # есть отличия
-                differences = self.differ.compare(dict(existing_schema), current_schema).render()
-
                 if (self.update_mode or self.reset_mode) and self.update_actions.get("update"):
-                    GLOBAL_STATS.add_updated(schema_path.name, differences)
-
                     # обновляем файл
                     if self.reset_mode and not self.update_mode:
+                        differences = self.differ.compare(
+                            dict(existing_schema), current_schema
+                        ).render()
+                        GLOBAL_STATS.add_updated(schema_path.name, differences)
+
                         with open(schema_path, "w", encoding="utf-8") as f:
                             json.dump(current_schema, f, indent=2, ensure_ascii=False)
                         self.logger.warning(f"Schema `{name}` updated (reset).\n\n{differences}")
@@ -252,6 +253,11 @@ class SchemaShot:
                         builder.add_schema(current_schema)
                         merged_schema = builder.to_schema()
 
+                        differences = self.differ.compare(
+                            dict(existing_schema), merged_schema
+                        ).render()
+                        GLOBAL_STATS.add_updated(schema_path.name, differences)
+
                         with open(schema_path, "w", encoding="utf-8") as f:
                             json.dump(merged_schema, f, indent=2, ensure_ascii=False)
 
@@ -262,6 +268,9 @@ class SchemaShot:
                         )
                     schema_updated = True
                 elif data is not None:
+                    differences = self.differ.compare(
+                        dict(existing_schema), current_schema
+                    ).render()
                     GLOBAL_STATS.add_uncommitted(schema_path.name, differences)
 
                     # только валидируем по старой схеме
