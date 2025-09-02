@@ -72,12 +72,12 @@ pip install pytest-jsonschema-snapshot
       )
   ```
 
-2. On first run, generate schemas with the `--schema-update` flag
+2. On first run, generate schemas with the `--schema-update` or `--schema-reset` (what is the difference? see the documentation) flag
    ```bash
    pytest --schema-update --save-original
    ```
 
-   **--save-original**: save the original data on which the validation was performed. Saving occurs when `--schema-update`, if you run the schema update without this attribute, the old original data will be deleted without saving new ones.
+   **--save-original**: save the original data on which the validation was performed. Saving occurs when `--schema-update` or `--schema-reset`, if you run the schema update without this attribute, the old original data will be deleted without saving new ones.
 
 3. On subsequent runs, tests will validate data against saved schemas
    ```bash

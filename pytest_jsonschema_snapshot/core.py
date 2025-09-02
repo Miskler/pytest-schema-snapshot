@@ -152,7 +152,7 @@ class SchemaShot:
 
         real_name, status = self._base_match(data, current_schema, real_name)
 
-        if self.update_mode:
+        if self.update_mode or self.reset_mode:
             self._save_process_original(real_name=real_name, status=status, data=data)
 
         return status
