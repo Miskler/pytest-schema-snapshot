@@ -22,7 +22,12 @@ def pytest_addoption(parser: pytest.Parser) -> None:
     parser.addoption(
         "--schema-update",
         action="store_true",
-        help="Update or create JSON Schema files based on current data",
+        help="Augmenting mode for updating schemas. *If something is valid for the old schema, then it is valid for the new one (and vice versa)*.",
+    )
+    parser.addoption(
+        "--schema-reset",
+        action="store_true",
+        help="New schema does not take into account the old one during update.",
     )
     parser.addoption(
         "--save-original",
@@ -66,11 +71,6 @@ def pytest_addoption(parser: pytest.Parser) -> None:
         default="on",
         help="Format mode: 'on' (annotate and validate), 'safe' (annotate), 'off' (disable)",
     )
-    # parser.addini(
-    # "jsss_examples_limit",
-    # default="3",
-    # help="Maximum number of examples to include in the schema (default: 3). Set to 0 to disable.",
-    # )
 
 
 @pytest.fixture(scope="function")
@@ -82,7 +82,12 @@ def schemashot(request: pytest.FixtureRequest) -> Generator[SchemaShot, None, No
     # Получаем путь к тестовому файлу
     test_path = Path(request.node.path if hasattr(request.node, "path") else request.node.fspath)
     root_dir = test_path.parent
+    
     update_mode = bool(request.config.getoption("--schema-update"))
+    reset_mode = bool(request.config.getoption("--schema-reset"))
+    if update_mode and reset_mode:
+        raise ValueError("Options --schema-update and --schema-reset are mutually exclusive.")
+
     save_original = bool(request.config.getoption("--save-original"))
     debug_mode = bool(request.config.getoption("--jsss-debug"))
 
@@ -114,6 +119,7 @@ def schemashot(request: pytest.FixtureRequest) -> Generator[SchemaShot, None, No
             format_mode,
             # examples_limit,
             update_mode,
+            reset_mode,
             actions,
             save_original,
             debug_mode,

@@ -26,8 +26,8 @@ class SchemaShot:
         differ: "JsonSchemaDiff",
         callable_regex: str = "{class_method=.}",
         format_mode: str = "on",
-        # examples_limit: int = 3,
         update_mode: bool = False,
+        reset_mode: bool = False,
         update_actions: dict[str, bool] = {},
         save_original: bool = False,
         debug_mode: bool = False,
@@ -47,6 +47,7 @@ class SchemaShot:
         self.format_mode: str = format_mode
         # self.examples_limit: int = examples_limit
         self.update_mode: bool = update_mode
+        self.reset_mode: bool = reset_mode
         self.update_actions: dict[str, bool] = update_actions
         self.save_original: bool = save_original
         self.debug_mode: bool = debug_mode
@@ -209,7 +210,7 @@ class SchemaShot:
 
         # --- когда схемы ещё нет ---
         if not schema_exists_before:
-            if not self.update_mode:
+            if not self.update_mode and not self.reset_mode:
                 raise pytest.fail.Exception(
                     f"Schema `{name}` not found."
                     "Run the test with the --schema-update option to create it."
@@ -235,13 +236,28 @@ class SchemaShot:
             if existing_schema != current_schema:  # есть отличия
                 differences = self.differ.compare(dict(existing_schema), current_schema).render()
 
-                if self.update_mode and self.update_actions.get("update"):
+                if (self.update_mode or self.reset_mode) and self.update_actions.get("update"):
                     GLOBAL_STATS.add_updated(schema_path.name, differences)
 
                     # обновляем файл
-                    with open(schema_path, "w", encoding="utf-8") as f:
-                        json.dump(current_schema, f, indent=2, ensure_ascii=False)
-                    self.logger.warning(f"Schema `{name}` updated.\n\n{differences}")
+                    if self.reset_mode and not self.update_mode:
+                        with open(schema_path, "w", encoding="utf-8") as f:
+                            json.dump(current_schema, f, indent=2, ensure_ascii=False)
+                        self.logger.warning(f"Schema `{name}` updated (reset).\n\n{differences}")
+                    elif self.update_mode and not self.reset_mode:
+                        builder = JsonToSchemaConverter(
+                            format_mode=self.format_mode  # type: ignore[arg-type]
+                        )  # , examples=self.examples_limit)
+                        builder.add_schema(existing_schema)
+                        builder.add_schema(current_schema)
+                        merged_schema = builder.to_schema()
+
+                        with open(schema_path, "w", encoding="utf-8") as f:
+                            json.dump(merged_schema, f, indent=2, ensure_ascii=False)
+
+                        self.logger.warning(f"Schema `{name}` updated (update).\n\n{differences}")
+                    else:  # both update_mode and reset_mode are True
+                        raise ValueError("Both update_mode and reset_mode cannot be True at the same time.")
                     schema_updated = True
                 elif data is not None:
                     GLOBAL_STATS.add_uncommitted(schema_path.name, differences)
